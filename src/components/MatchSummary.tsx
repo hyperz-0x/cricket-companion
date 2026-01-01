@@ -1,26 +1,35 @@
-import React from 'react';
-import { Match } from '@/types/cricket';
+import React, { useState } from 'react';
+import { Match, Series } from '@/types/cricket';
 import { Button } from '@/components/ui/button';
-import { Trophy, Star, Download, ArrowRight } from 'lucide-react';
+import { Trophy, Star, Download, ArrowRight, Home } from 'lucide-react';
 import { exportMatchToPDF } from '@/lib/pdfExport';
 import { formatOvers } from '@/lib/matchUtils';
 import StatsChart from './StatsChart';
+import NextMatchModal from './NextMatchModal';
 
 interface MatchSummaryProps {
   match: Match;
+  series?: Series | null;
   onNewMatch?: () => void;
-  onNextSeriesMatch?: () => void;
+  onNextSeriesMatch?: (tossWinner: string, tossDecision: 'bat' | 'bowl') => void;
+  onGoHome?: () => void;
   isSeriesMatch?: boolean;
 }
 
 const MatchSummary: React.FC<MatchSummaryProps> = ({
   match,
+  series,
   onNewMatch,
   onNextSeriesMatch,
+  onGoHome,
   isSeriesMatch,
 }) => {
-  const innings1 = match.innings[0];
-  const innings2 = match.innings[1];
+  const [showNextMatchModal, setShowNextMatchModal] = useState(false);
+
+  const handleStartNextMatch = (tossWinner: string, tossDecision: 'bat' | 'bowl') => {
+    setShowNextMatchModal(false);
+    onNextSeriesMatch?.(tossWinner, tossDecision);
+  };
 
   return (
     <div className="min-h-screen bg-background p-4">
@@ -32,6 +41,12 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
           <p className="text-muted-foreground">
             {match.team1} vs {match.team2}
           </p>
+          {series && (
+            <p className="text-sm text-primary mt-2">
+              Match {series.matches.filter(m => m.isComplete).length} of {series.totalMatches} • 
+              Series: {series.team1Wins} - {series.team2Wins}
+            </p>
+          )}
         </div>
 
         {/* Winner Card */}
@@ -93,25 +108,41 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
             Download Scorecard (PDF)
           </Button>
 
-          {isSeriesMatch && onNextSeriesMatch && (
-            <Button size="lg" onClick={onNextSeriesMatch} className="w-full">
-              Next Match
+          {isSeriesMatch && onNextSeriesMatch && series && (
+            <Button size="lg" onClick={() => setShowNextMatchModal(true)} className="w-full">
+              Next Match (Match {series.matches.length + 1})
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           )}
 
-          {onNewMatch && (
+          {onGoHome && (
             <Button
               variant="secondary"
               size="lg"
-              onClick={onNewMatch}
+              onClick={onGoHome}
               className="w-full"
             >
-              New Match
+              <Home className="w-4 h-4 mr-2" />
+              Home
             </Button>
           )}
         </div>
       </div>
+
+      {/* Next Match Modal */}
+      {series && (
+        <NextMatchModal
+          isOpen={showNextMatchModal}
+          onClose={() => setShowNextMatchModal(false)}
+          onStartMatch={handleStartNextMatch}
+          team1={series.team1}
+          team2={series.team2}
+          matchNumber={series.matches.length + 1}
+          totalMatches={series.totalMatches}
+          team1Wins={series.team1Wins}
+          team2Wins={series.team2Wins}
+        />
+      )}
     </div>
   );
 };

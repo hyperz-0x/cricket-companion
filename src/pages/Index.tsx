@@ -148,8 +148,18 @@ const Index: React.FC = () => {
     }
   };
 
-  const handleNextSeriesMatch = () => {
+  const handleNextSeriesMatch = (tossWinner: string, tossDecision: 'bat' | 'bowl') => {
     if (!currentSeries || !currentMatch) return;
+
+    const battingTeam =
+      tossWinner === currentSeries.team1
+        ? tossDecision === 'bat'
+          ? currentSeries.team1
+          : currentSeries.team2
+        : tossDecision === 'bat'
+        ? currentSeries.team2
+        : currentSeries.team1;
+    const bowlingTeam = battingTeam === currentSeries.team1 ? currentSeries.team2 : currentSeries.team1;
 
     const newMatch: Match = {
       id: generateId(),
@@ -158,16 +168,21 @@ const Index: React.FC = () => {
       team2: currentSeries.team2,
       playersPerTeam: currentMatch.playersPerTeam,
       oversPerInnings: currentMatch.oversPerInnings,
-      innings: [],
+      innings: [createInnings(battingTeam, bowlingTeam)],
       currentInnings: 0,
       isComplete: false,
+      toss: {
+        winner: tossWinner,
+        decision: tossDecision,
+      },
     };
 
     const updatedSeries = { ...currentSeries };
     updatedSeries.matches.push(newMatch);
     setCurrentSeries(updatedSeries);
     setCurrentMatch(newMatch);
-    setAppState('setup');
+    setAppState('match');
+    toast.success(`Match ${updatedSeries.matches.length} started!`);
   };
 
   const handleEndInnings = () => {
@@ -268,7 +283,8 @@ const Index: React.FC = () => {
     return (
       <MatchSummary
         match={currentMatch}
-        onNewMatch={handleNewMatch}
+        series={currentSeries}
+        onGoHome={() => setAppState('home')}
         onNextSeriesMatch={
           currentSeries && !currentSeries.isComplete ? handleNextSeriesMatch : undefined
         }
