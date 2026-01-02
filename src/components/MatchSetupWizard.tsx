@@ -206,6 +206,18 @@ const MatchSetupWizard: React.FC<MatchSetupWizardProps> = ({ onComplete }) => {
               </Button>
             ))}
           </div>
+          <div className="space-y-2 mt-3">
+            <Label htmlFor="customPlayers">Or enter custom players</Label>
+            <Input
+              id="customPlayers"
+              type="number"
+              min={2}
+              max={15}
+              value={setup.playersPerTeam}
+              onChange={(e) => setSetup({ ...setup, playersPerTeam: Math.max(2, Math.min(15, parseInt(e.target.value) || 2)) })}
+              className="h-12"
+            />
+          </div>
           <p className="text-xs text-muted-foreground text-center">
             All out when {setup.playersPerTeam - 1} wickets fall
           </p>
