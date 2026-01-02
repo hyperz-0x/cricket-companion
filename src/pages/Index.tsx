@@ -272,6 +272,7 @@ const Index: React.FC = () => {
     return (
       <LiveMatch
         match={currentMatch}
+        series={currentSeries}
         onMatchUpdate={handleMatchUpdate}
         onMatchComplete={handleMatchComplete}
         onEndInnings={handleEndInnings}

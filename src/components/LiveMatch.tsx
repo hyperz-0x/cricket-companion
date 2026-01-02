@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Match, Innings, Player, Bowler } from '@/types/cricket';
+import { Match, Innings, Player, Bowler, Series } from '@/types/cricket';
 import { Button } from '@/components/ui/button';
 import {
   generateId,
@@ -16,10 +16,13 @@ import Scorecard from './Scorecard';
 import OverHistory from './OverHistory';
 import PlayerInputModal from './PlayerInputModal';
 import WicketModal from './WicketModal';
-import { Menu, RotateCcw, Flag } from 'lucide-react';
+import EditPlayerModal from './EditPlayerModal';
+import { Menu, RotateCcw, Flag, Undo2, Edit3 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface LiveMatchProps {
   match: Match;
+  series?: Series | null;
   onMatchUpdate: (match: Match) => void;
   onMatchComplete: (match: Match) => void;
   onEndInnings: () => void;
@@ -27,14 +30,22 @@ interface LiveMatchProps {
 
 type ModalType = 'striker' | 'nonStriker' | 'bowler' | 'newBowler' | 'wicket' | null;
 
+interface MatchSnapshot {
+  match: Match;
+  description: string;
+}
+
 const LiveMatch: React.FC<LiveMatchProps> = ({
   match,
+  series,
   onMatchUpdate,
   onMatchComplete,
   onEndInnings,
 }) => {
   const [modalType, setModalType] = useState<ModalType>(null);
   const [pendingWicket, setPendingWicket] = useState(false);
+  const [undoHistory, setUndoHistory] = useState<MatchSnapshot[]>([]);
+  const [editPlayer, setEditPlayer] = useState<{ type: 'striker' | 'nonStriker' | 'bowler'; name: string } | null>(null);
 
   const currentInnings = match.innings[match.currentInnings];
   const isSecondInnings = match.currentInnings === 1;
@@ -77,8 +88,50 @@ const LiveMatch: React.FC<LiveMatchProps> = ({
     onMatchUpdate(updatedMatch);
   };
 
+  // Save snapshot for undo
+  const saveSnapshot = (description: string) => {
+    setUndoHistory(prev => [...prev.slice(-9), { match: JSON.parse(JSON.stringify(match)), description }]);
+  };
+
+  // Undo last action
+  const handleUndo = () => {
+    if (undoHistory.length === 0) {
+      toast.error('Nothing to undo');
+      return;
+    }
+    const lastSnapshot = undoHistory[undoHistory.length - 1];
+    setUndoHistory(prev => prev.slice(0, -1));
+    onMatchUpdate(lastSnapshot.match);
+    toast.success(`Undone: ${lastSnapshot.description}`);
+  };
+
+  // Edit player name
+  const handleEditPlayerName = (newName: string) => {
+    if (!editPlayer) return;
+    
+    saveSnapshot(`Renamed ${editPlayer.type}`);
+    const updatedMatch = JSON.parse(JSON.stringify(match));
+    const innings = updatedMatch.innings[match.currentInnings];
+
+    if (editPlayer.type === 'striker') {
+      innings.batters[innings.currentBatterIndex].name = newName;
+    } else if (editPlayer.type === 'nonStriker') {
+      innings.batters[innings.nonStrikerIndex].name = newName;
+    } else if (editPlayer.type === 'bowler') {
+      innings.bowlers[innings.currentBowlerIndex].name = newName;
+    }
+    
+    setEditPlayer(null);
+    onMatchUpdate(updatedMatch);
+    toast.success('Player name updated');
+  };
+
   const handleScore = (runs: number, isExtra = false, extraType?: string) => {
-    const updatedMatch = { ...match };
+    // Save state before scoring
+    const description = isExtra ? `${extraType}: ${runs}` : `Scored ${runs} run${runs !== 1 ? 's' : ''}`;
+    saveSnapshot(description);
+
+    const updatedMatch = JSON.parse(JSON.stringify(match));
     const innings = updatedMatch.innings[match.currentInnings];
     const striker = innings.batters[innings.currentBatterIndex];
     const bowler = innings.bowlers[innings.currentBowlerIndex];
@@ -200,7 +253,10 @@ const LiveMatch: React.FC<LiveMatchProps> = ({
   };
 
   const handleWicketConfirm = (dismissalType: string, newBatterName: string) => {
-    const updatedMatch = { ...match };
+    // Save state before wicket
+    saveSnapshot(`Wicket: ${dismissalType}`);
+
+    const updatedMatch = JSON.parse(JSON.stringify(match));
     const innings = updatedMatch.innings[match.currentInnings];
     const striker = innings.batters[innings.currentBatterIndex];
     const bowler = innings.bowlers[innings.currentBowlerIndex];
@@ -323,12 +379,26 @@ const LiveMatch: React.FC<LiveMatchProps> = ({
               <h1 className="text-lg font-bold">
                 {currentInnings.battingTeam} vs {currentInnings.bowlingTeam}
               </h1>
-              <p className="text-xs text-muted-foreground">
-                {isSecondInnings ? '2nd' : '1st'} Innings
-              </p>
+              <div className="flex items-center gap-2">
+                <p className="text-xs text-muted-foreground">
+                  {isSecondInnings ? '2nd' : '1st'} Innings
+                </p>
+                {series && (
+                  <span className="text-xs px-2 py-0.5 bg-primary/20 text-primary rounded-full">
+                    Match {series.matches.length} of {series.totalMatches} • {series.team1Wins}-{series.team2Wins}
+                  </span>
+                )}
+              </div>
             </div>
-            <Button variant="ghost" size="icon">
-              <Menu className="w-5 h-5" />
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleUndo}
+              disabled={undoHistory.length === 0 || modalType !== null}
+              className="gap-1"
+            >
+              <Undo2 className="w-4 h-4" />
+              Undo
             </Button>
           </div>
 
@@ -377,7 +447,13 @@ const LiveMatch: React.FC<LiveMatchProps> = ({
         {/* Current Players */}
         {striker && nonStriker && currentBowler && (
           <div className="grid grid-cols-2 gap-3">
-            <div className="cricket-card p-3">
+            <div className="cricket-card p-3 relative group">
+              <button 
+                onClick={() => setEditPlayer({ type: 'striker', name: striker.name })}
+                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-muted rounded"
+              >
+                <Edit3 className="w-3 h-3 text-muted-foreground" />
+              </button>
               <div className="flex items-center gap-2 mb-1">
                 <span className="w-2 h-2 bg-accent rounded-full animate-pulse"></span>
                 <span className="text-xs text-muted-foreground">On Strike</span>
@@ -388,7 +464,13 @@ const LiveMatch: React.FC<LiveMatchProps> = ({
                 <span className="text-xs text-muted-foreground">({striker.balls})</span>
               </p>
             </div>
-            <div className="cricket-card p-3">
+            <div className="cricket-card p-3 relative group">
+              <button 
+                onClick={() => setEditPlayer({ type: 'nonStriker', name: nonStriker.name })}
+                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-muted rounded"
+              >
+                <Edit3 className="w-3 h-3 text-muted-foreground" />
+              </button>
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-xs text-muted-foreground">Non-Striker</span>
               </div>
@@ -403,7 +485,13 @@ const LiveMatch: React.FC<LiveMatchProps> = ({
 
         {/* Bowler */}
         {currentBowler && (
-          <div className="cricket-card p-3">
+          <div className="cricket-card p-3 relative group">
+            <button 
+              onClick={() => setEditPlayer({ type: 'bowler', name: currentBowler.name })}
+              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-muted rounded"
+            >
+              <Edit3 className="w-3 h-3 text-muted-foreground" />
+            </button>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted-foreground">Bowling</p>
@@ -509,6 +597,14 @@ const LiveMatch: React.FC<LiveMatchProps> = ({
         batterName={striker?.name || ''}
         bowlerName={currentBowler?.name || ''}
         isAllOut={isAllOut}
+      />
+
+      <EditPlayerModal
+        isOpen={editPlayer !== null}
+        onClose={() => setEditPlayer(null)}
+        onSubmit={handleEditPlayerName}
+        currentName={editPlayer?.name || ''}
+        playerType={editPlayer?.type === 'bowler' ? 'bowler' : 'batter'}
       />
     </div>
   );
