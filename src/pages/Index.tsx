@@ -124,18 +124,32 @@ const Index: React.FC = () => {
       }
 
       // Check if series complete
+      // For 2-match series: always play both matches (can result in draw if 1-1)
+      // For 3 or 5 match series: complete when one team wins majority
+      const isEvenSeries = updatedSeries.totalMatches === 2;
       const winsNeeded = Math.ceil(updatedSeries.totalMatches / 2);
-      if (
-        updatedSeries.team1Wins >= winsNeeded ||
-        updatedSeries.team2Wins >= winsNeeded ||
-        updatedSeries.matches.length >= updatedSeries.totalMatches
-      ) {
+      const allMatchesPlayed = updatedSeries.matches.length >= updatedSeries.totalMatches;
+      
+      // Series is complete if:
+      // - All matches have been played (for 2-match series, must play both)
+      // - OR one team has won the majority (for 3/5 match series)
+      const seriesDecided = isEvenSeries 
+        ? allMatchesPlayed 
+        : (updatedSeries.team1Wins > winsNeeded || updatedSeries.team2Wins > winsNeeded || allMatchesPlayed);
+      
+      if (seriesDecided) {
         updatedSeries.isComplete = true;
         updatedSeries.manOfSeries = calculateManOfSeries(updatedSeries);
         setSeriesHistory((prev) => [updatedSeries, ...prev]);
         setCurrentSeries(updatedSeries);
         setAppState('seriesSummary');
-        toast.success('Series complete!');
+        
+        // Check if series is drawn
+        if (updatedSeries.team1Wins === updatedSeries.team2Wins) {
+          toast.success('Series drawn!');
+        } else {
+          toast.success('Series complete!');
+        }
       } else {
         setCurrentSeries(updatedSeries);
         setAppState('matchSummary');
