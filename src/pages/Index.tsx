@@ -14,7 +14,8 @@ import LiveMatch from '@/components/LiveMatch';
 import MatchSummary from '@/components/MatchSummary';
 import SeriesSummary from '@/components/SeriesSummary';
 import MatchHistory from '@/components/MatchHistory';
-import { History, Play, Trophy } from 'lucide-react';
+import { History, Play } from 'lucide-react';
+import logo from '@/assets/logo.png';
 import { toast } from 'sonner';
 
 type AppState = 'home' | 'setup' | 'match' | 'matchSummary' | 'seriesSummary' | 'history';
@@ -234,11 +235,9 @@ const Index: React.FC = () => {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
         <div className="text-center mb-12">
-          <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-            <Trophy className="w-12 h-12 text-primary-foreground" />
-          </div>
+          <img src={logo} alt="HYP-CricScore Logo" className="w-32 h-32 mx-auto mb-4 object-contain" />
           <h1 className="text-4xl md:text-5xl font-bold mb-3 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            Cricket Scorer
+            HYP-CricScore
           </h1>
           <p className="text-lg text-muted-foreground">
             Track matches, series & player stats
