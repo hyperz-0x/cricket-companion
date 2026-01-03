@@ -385,7 +385,7 @@ const LiveMatch: React.FC<LiveMatchProps> = ({
                 </p>
                 {series && (
                   <span className="text-xs px-2 py-0.5 bg-primary/20 text-primary rounded-full">
-                    Match {series.matches.length} of {series.totalMatches} • {series.team1Wins}-{series.team2Wins}
+                    Match {series.matches.length} of {series.totalMatches} • Series: {series.team1Wins}-{series.team2Wins}
                   </span>
                 )}
               </div>
