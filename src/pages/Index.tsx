@@ -35,15 +35,11 @@ const Index: React.FC = () => {
 
   // Save history to localStorage
   useEffect(() => {
-    if (matchHistory.length > 0) {
-      saveToLocalStorage('cricketMatchHistory', matchHistory);
-    }
+    saveToLocalStorage('cricketMatchHistory', matchHistory);
   }, [matchHistory]);
 
   useEffect(() => {
-    if (seriesHistory.length > 0) {
-      saveToLocalStorage('cricketSeriesHistory', seriesHistory);
-    }
+    saveToLocalStorage('cricketSeriesHistory', seriesHistory);
   }, [seriesHistory]);
 
   const handleSetupComplete = (setup: MatchSetup) => {
@@ -96,16 +92,6 @@ const Index: React.FC = () => {
     setAppState('match');
     toast.success('Match started! Good luck!');
   };
-
-  // Auto-save in-progress match to localStorage
-  useEffect(() => {
-    if (currentMatch && !currentMatch.isComplete) {
-      saveToLocalStorage('cricketCurrentMatch', currentMatch);
-      if (currentSeries) {
-        saveToLocalStorage('cricketCurrentSeries', currentSeries);
-      }
-    }
-  }, [currentMatch, currentSeries]);
 
   const handleMatchUpdate = (match: Match) => {
     setCurrentMatch(match);
