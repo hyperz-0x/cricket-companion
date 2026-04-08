@@ -86,8 +86,10 @@ const Index: React.FC = () => {
         team2Wins: 0,
       };
       setCurrentSeries(newSeries);
+      setSeriesHistory((prev) => [newSeries, ...prev]);
     } else {
       setCurrentSeries(null);
+      setMatchHistory((prev) => [newMatch, ...prev]);
     }
 
     setCurrentMatch(newMatch);
