@@ -158,11 +158,10 @@ const Index: React.FC = () => {
       if (seriesDecided) {
         updatedSeries.isComplete = true;
         updatedSeries.manOfSeries = calculateManOfSeries(updatedSeries);
-        setSeriesHistory((prev) => [updatedSeries, ...prev]);
+        setSeriesHistory((prev) => prev.map(s => s.id === updatedSeries.id ? updatedSeries : s));
         setCurrentSeries(updatedSeries);
         setAppState('seriesSummary');
         
-        // Check if series is drawn
         if (updatedSeries.team1Wins === updatedSeries.team2Wins) {
           toast.success('Series drawn!');
         } else {
@@ -170,11 +169,12 @@ const Index: React.FC = () => {
         }
       } else {
         setCurrentSeries(updatedSeries);
+        setSeriesHistory((prev) => prev.map(s => s.id === updatedSeries.id ? updatedSeries : s));
         setAppState('matchSummary');
         toast.success('Match complete!');
       }
     } else {
-      setMatchHistory((prev) => [match, ...prev]);
+      setMatchHistory((prev) => prev.map(m => m.id === match.id ? match : m));
       setAppState('matchSummary');
       toast.success('Match complete!');
     }
