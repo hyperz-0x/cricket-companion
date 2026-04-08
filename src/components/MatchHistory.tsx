@@ -82,26 +82,120 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({
 
     return Object.values(stats).sort((a, b) => b.runs - a.runs);
   };
+  const allTimeStats = showStats ? getAllTimeStats() : [];
+
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-2xl mx-auto">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold">Match History</h1>
-          <Button variant="outline" onClick={onClose}>
-            Back
-          </Button>
+          <div className="flex items-center gap-3">
+            <img src={logo} alt="HYP-CricScore" className="w-8 h-8 object-contain" />
+            <h1 className="text-2xl font-bold">Match History</h1>
+          </div>
+          <div className="flex gap-2">
+            <Button variant={showStats ? "default" : "outline"} size="sm" onClick={() => setShowStats(!showStats)}>
+              <BarChart3 className="w-4 h-4 mr-1" />
+              Stats
+            </Button>
+            <Button variant="outline" size="sm" onClick={onClose}>
+              Back
+            </Button>
+          </div>
         </div>
 
+        {/* All-Time Player Stats */}
+        {showStats && (
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold text-primary mb-3 flex items-center gap-2">
+              <BarChart3 className="w-5 h-5" />
+              All-Time Player Stats
+            </h2>
+            <ScrollArea className="h-80">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-left p-2">Player</th>
+                      <th className="text-center p-2">M</th>
+                      <th className="text-center p-2">Runs</th>
+                      <th className="text-center p-2">Balls</th>
+                      <th className="text-center p-2">4s</th>
+                      <th className="text-center p-2">6s</th>
+                      <th className="text-center p-2">Wkts</th>
+                      <th className="text-center p-2">SR</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {allTimeStats.map((player, idx) => (
+                      <tr key={idx} className="border-b border-border/50 hover:bg-muted/50">
+                        <td className="p-2 font-medium">{player.name}</td>
+                        <td className="text-center p-2">{player.matches}</td>
+                        <td className="text-center p-2 font-semibold text-primary">{player.runs}</td>
+                        <td className="text-center p-2">{player.balls}</td>
+                        <td className="text-center p-2">{player.fours}</td>
+                        <td className="text-center p-2">{player.sixes}</td>
+                        <td className="text-center p-2">{player.wickets}</td>
+                        <td className="text-center p-2">{player.balls > 0 ? ((player.runs / player.balls) * 100).toFixed(1) : '0'}</td>
+                      </tr>
+                    ))}
+                    {allTimeStats.length === 0 && (
+                      <tr><td colSpan={8} className="p-4 text-center text-muted-foreground">No completed matches yet</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </ScrollArea>
+          </div>
+        )}
+
+        {/* Incomplete Matches / Series - Continue */}
+        {(matches.some(m => !m.isComplete) || series.some(s => !s.isComplete)) && (
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold text-accent mb-3 flex items-center gap-2">
+              <PlayCircle className="w-5 h-5" />
+              In Progress
+            </h2>
+            <div className="space-y-3">
+              {series.filter(s => !s.isComplete).map(s => (
+                <div key={s.id} className="cricket-card p-4 flex items-center justify-between border-l-4 border-l-accent">
+                  <div>
+                    <p className="font-semibold">{s.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {s.team1} {s.team1Wins} - {s.team2Wins} {s.team2} • {s.matches.length}/{s.totalMatches} matches
+                    </p>
+                  </div>
+                  <Button size="sm" onClick={() => onContinueSeries?.(s)}>
+                    <PlayCircle className="w-4 h-4 mr-1" /> Continue
+                  </Button>
+                </div>
+              ))}
+              {matches.filter(m => !m.isComplete).map(m => (
+                <div key={m.id} className="cricket-card p-4 flex items-center justify-between border-l-4 border-l-accent">
+                  <div>
+                    <p className="font-semibold">{m.team1} vs {m.team2}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {m.innings[m.currentInnings]?.totalRuns}/{m.innings[m.currentInnings]?.totalWickets} ({m.currentInnings === 0 ? '1st' : '2nd'} Inn)
+                    </p>
+                  </div>
+                  <Button size="sm" onClick={() => onContinueMatch?.(m)}>
+                    <PlayCircle className="w-4 h-4 mr-1" /> Continue
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Series */}
-        {series.length > 0 && (
+        {series.filter(s => s.isComplete).length > 0 && (
           <div className="mb-6">
             <h2 className="text-lg font-semibold text-primary mb-3 flex items-center gap-2">
               <Trophy className="w-5 h-5" />
-              Series ({series.length})
+              Series ({series.filter(s => s.isComplete).length})
             </h2>
             <ScrollArea className="h-64">
               <div className="space-y-3">
-                {series.map((s) => (
+                {series.filter(s => s.isComplete).map((s) => (
                   <div
                     key={s.id}
                     className="cricket-card p-4 flex items-center justify-between"
@@ -116,25 +210,13 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({
                       </p>
                     </div>
                     <div className="flex gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => onViewSeries(s)}
-                      >
+                      <Button variant="ghost" size="icon" onClick={() => onViewSeries(s)}>
                         <Eye className="w-4 h-4" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => exportSeriesToPDF(s)}
-                      >
+                      <Button variant="ghost" size="icon" onClick={() => exportSeriesToPDF(s)}>
                         <Download className="w-4 h-4" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => onDeleteSeries(s.id)}
-                      >
+                      <Button variant="ghost" size="icon" onClick={() => onDeleteSeries(s.id)}>
                         <Trash2 className="w-4 h-4 text-destructive" />
                       </Button>
                     </div>
@@ -149,16 +231,16 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({
         <div>
           <h2 className="text-lg font-semibold text-muted-foreground mb-3 flex items-center gap-2">
             <Calendar className="w-5 h-5" />
-            Single Matches ({matches.length})
+            Single Matches ({matches.filter(m => m.isComplete).length})
           </h2>
-          {matches.length === 0 && series.length === 0 ? (
+          {matches.filter(m => m.isComplete).length === 0 && series.filter(s => s.isComplete).length === 0 && !matches.some(m => !m.isComplete) && !series.some(s => !s.isComplete) ? (
             <div className="cricket-card p-8 text-center">
               <p className="text-muted-foreground">No matches played yet</p>
             </div>
           ) : (
             <ScrollArea className="h-64">
               <div className="space-y-3">
-                {matches.map((match) => (
+                {matches.filter(m => m.isComplete).map((match) => (
                   <div
                     key={match.id}
                     className="cricket-card p-4 flex items-center justify-between"
@@ -170,32 +252,18 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({
                       <p className="text-sm text-muted-foreground">
                         {new Date(match.date).toLocaleDateString()}
                       </p>
-                      {match.isComplete && (
-                        <p className="text-xs text-primary">
-                          Winner: {match.winner || 'Tied'}
-                        </p>
-                      )}
+                      <p className="text-xs text-primary">
+                        Winner: {match.winner || 'Tied'}
+                      </p>
                     </div>
                     <div className="flex gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => onViewMatch(match)}
-                      >
+                      <Button variant="ghost" size="icon" onClick={() => onViewMatch(match)}>
                         <Eye className="w-4 h-4" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => exportMatchToPDF(match)}
-                      >
+                      <Button variant="ghost" size="icon" onClick={() => exportMatchToPDF(match)}>
                         <Download className="w-4 h-4" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => onDeleteMatch(match.id)}
-                      >
+                      <Button variant="ghost" size="icon" onClick={() => onDeleteMatch(match.id)}>
                         <Trash2 className="w-4 h-4 text-destructive" />
                       </Button>
                     </div>
