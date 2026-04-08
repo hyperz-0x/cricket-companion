@@ -18,6 +18,7 @@ import PlayerInputModal from './PlayerInputModal';
 import WicketModal from './WicketModal';
 import EditPlayerModal from './EditPlayerModal';
 import { Menu, RotateCcw, Flag, Undo2, Edit3 } from 'lucide-react';
+import logo from '@/assets/logo.png';
 import { toast } from 'sonner';
 
 interface LiveMatchProps {
@@ -375,19 +376,22 @@ const LiveMatch: React.FC<LiveMatchProps> = ({
       <header className="sticky top-0 z-10 bg-card/95 backdrop-blur border-b border-border px-4 py-3">
         <div className="max-w-2xl mx-auto">
           <div className="flex items-center justify-between mb-2">
-            <div>
-              <h1 className="text-lg font-bold">
-                {currentInnings.battingTeam} vs {currentInnings.bowlingTeam}
-              </h1>
-              <div className="flex items-center gap-2">
-                <p className="text-xs text-muted-foreground">
-                  {isSecondInnings ? '2nd' : '1st'} Innings
-                </p>
-                {series && (
-                  <span className="text-xs px-2 py-0.5 bg-primary/20 text-primary rounded-full">
-                    Match {series.matches.length} of {series.totalMatches} • Series: {series.team1Wins}-{series.team2Wins}
-                  </span>
-                )}
+            <div className="flex items-center gap-3">
+              <img src={logo} alt="HYP-CricScore" className="w-8 h-8 object-contain" />
+              <div>
+                <h1 className="text-lg font-bold">
+                  {currentInnings.battingTeam} vs {currentInnings.bowlingTeam}
+                </h1>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs text-muted-foreground">
+                    {isSecondInnings ? '2nd' : '1st'} Innings
+                  </p>
+                  {series && (
+                    <span className="text-xs px-2 py-0.5 bg-primary/20 text-primary rounded-full">
+                      Match {series.matches.length} of {series.totalMatches} • Series: {series.team1Wins}-{series.team2Wins}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
             <Button 

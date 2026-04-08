@@ -2,6 +2,7 @@ import React from 'react';
 import { Series } from '@/types/cricket';
 import { Button } from '@/components/ui/button';
 import { Trophy, Star, Download, Home } from 'lucide-react';
+import logo from '@/assets/logo.png';
 import { exportSeriesToPDF } from '@/lib/pdfExport';
 import { getSeriesStats } from '@/lib/matchUtils';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -28,6 +29,7 @@ const SeriesSummary: React.FC<SeriesSummaryProps> = ({ series, onNewSeries }) =>
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Header */}
         <div className="text-center py-6">
+          <img src={logo} alt="HYP-CricScore" className="w-12 h-12 mx-auto mb-3 object-contain" />
           <Trophy className="w-20 h-20 mx-auto text-cricket-gold mb-4" />
           <h1 className="text-3xl font-bold mb-2">Series Complete!</h1>
           <p className="text-lg text-muted-foreground">{series.name}</p>

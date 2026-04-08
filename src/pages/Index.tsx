@@ -35,15 +35,11 @@ const Index: React.FC = () => {
 
   // Save history to localStorage
   useEffect(() => {
-    if (matchHistory.length > 0) {
-      saveToLocalStorage('cricketMatchHistory', matchHistory);
-    }
+    saveToLocalStorage('cricketMatchHistory', matchHistory);
   }, [matchHistory]);
 
   useEffect(() => {
-    if (seriesHistory.length > 0) {
-      saveToLocalStorage('cricketSeriesHistory', seriesHistory);
-    }
+    saveToLocalStorage('cricketSeriesHistory', seriesHistory);
   }, [seriesHistory]);
 
   const handleSetupComplete = (setup: MatchSetup) => {
@@ -86,8 +82,10 @@ const Index: React.FC = () => {
         team2Wins: 0,
       };
       setCurrentSeries(newSeries);
+      setSeriesHistory((prev) => [newSeries, ...prev]);
     } else {
       setCurrentSeries(null);
+      setMatchHistory((prev) => [newMatch, ...prev]);
     }
 
     setCurrentMatch(newMatch);
@@ -104,6 +102,11 @@ const Index: React.FC = () => {
         updatedSeries.matches[matchIdx] = match;
       }
       setCurrentSeries(updatedSeries);
+      // Sync to history
+      setSeriesHistory((prev) => prev.map(s => s.id === updatedSeries.id ? updatedSeries : s));
+    } else {
+      // Sync to history
+      setMatchHistory((prev) => prev.map(m => m.id === match.id ? match : m));
     }
   };
 
@@ -141,11 +144,10 @@ const Index: React.FC = () => {
       if (seriesDecided) {
         updatedSeries.isComplete = true;
         updatedSeries.manOfSeries = calculateManOfSeries(updatedSeries);
-        setSeriesHistory((prev) => [updatedSeries, ...prev]);
+        setSeriesHistory((prev) => prev.map(s => s.id === updatedSeries.id ? updatedSeries : s));
         setCurrentSeries(updatedSeries);
         setAppState('seriesSummary');
         
-        // Check if series is drawn
         if (updatedSeries.team1Wins === updatedSeries.team2Wins) {
           toast.success('Series drawn!');
         } else {
@@ -153,11 +155,12 @@ const Index: React.FC = () => {
         }
       } else {
         setCurrentSeries(updatedSeries);
+        setSeriesHistory((prev) => prev.map(s => s.id === updatedSeries.id ? updatedSeries : s));
         setAppState('matchSummary');
         toast.success('Match complete!');
       }
     } else {
-      setMatchHistory((prev) => [match, ...prev]);
+      setMatchHistory((prev) => prev.map(m => m.id === match.id ? match : m));
       setAppState('matchSummary');
       toast.success('Match complete!');
     }
@@ -228,6 +231,25 @@ const Index: React.FC = () => {
   const handleViewSeries = (series: Series) => {
     setCurrentSeries(series);
     setAppState('seriesSummary');
+  };
+
+  const handleContinueMatch = (match: Match) => {
+    setCurrentMatch(match);
+    setCurrentSeries(null);
+    setAppState('match');
+    toast.info('Resuming match...');
+  };
+
+  const handleContinueSeries = (series: Series) => {
+    const lastMatch = series.matches[series.matches.length - 1];
+    setCurrentSeries(series);
+    setCurrentMatch(lastMatch);
+    if (lastMatch.isComplete) {
+      setAppState('matchSummary');
+    } else {
+      setAppState('match');
+    }
+    toast.info('Resuming series...');
   };
 
   // Render based on app state
@@ -320,6 +342,8 @@ const Index: React.FC = () => {
         onDeleteSeries={handleDeleteSeries}
         onViewMatch={handleViewMatch}
         onViewSeries={handleViewSeries}
+        onContinueMatch={handleContinueMatch}
+        onContinueSeries={handleContinueSeries}
         onClose={() => setAppState('home')}
       />
     );

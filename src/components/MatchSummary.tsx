@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Match, Series } from '@/types/cricket';
 import { Button } from '@/components/ui/button';
 import { Trophy, Star, Download, ArrowRight, Home } from 'lucide-react';
+import logo from '@/assets/logo.png';
 import { exportMatchToPDF } from '@/lib/pdfExport';
 import { formatOvers } from '@/lib/matchUtils';
 import StatsChart from './StatsChart';
@@ -36,6 +37,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Header */}
         <div className="text-center py-6">
+          <img src={logo} alt="HYP-CricScore" className="w-12 h-12 mx-auto mb-3 object-contain" />
           <Trophy className="w-16 h-16 mx-auto text-cricket-gold mb-4" />
           <h1 className="text-3xl font-bold mb-2">Match Complete!</h1>
           <p className="text-muted-foreground">
