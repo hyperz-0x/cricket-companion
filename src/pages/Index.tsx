@@ -240,6 +240,25 @@ const Index: React.FC = () => {
     setAppState('seriesSummary');
   };
 
+  const handleContinueMatch = (match: Match) => {
+    setCurrentMatch(match);
+    setCurrentSeries(null);
+    setAppState('match');
+    toast.info('Resuming match...');
+  };
+
+  const handleContinueSeries = (series: Series) => {
+    const lastMatch = series.matches[series.matches.length - 1];
+    setCurrentSeries(series);
+    setCurrentMatch(lastMatch);
+    if (lastMatch.isComplete) {
+      setAppState('matchSummary');
+    } else {
+      setAppState('match');
+    }
+    toast.info('Resuming series...');
+  };
+
   // Render based on app state
   if (appState === 'home') {
     return (
@@ -330,6 +349,8 @@ const Index: React.FC = () => {
         onDeleteSeries={handleDeleteSeries}
         onViewMatch={handleViewMatch}
         onViewSeries={handleViewSeries}
+        onContinueMatch={handleContinueMatch}
+        onContinueSeries={handleContinueSeries}
         onClose={() => setAppState('home')}
       />
     );
