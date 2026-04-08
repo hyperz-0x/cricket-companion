@@ -116,6 +116,11 @@ const Index: React.FC = () => {
         updatedSeries.matches[matchIdx] = match;
       }
       setCurrentSeries(updatedSeries);
+      // Sync to history
+      setSeriesHistory((prev) => prev.map(s => s.id === updatedSeries.id ? updatedSeries : s));
+    } else {
+      // Sync to history
+      setMatchHistory((prev) => prev.map(m => m.id === match.id ? match : m));
     }
   };
 
