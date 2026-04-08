@@ -95,6 +95,16 @@ const Index: React.FC = () => {
     toast.success('Match started! Good luck!');
   };
 
+  // Auto-save in-progress match to localStorage
+  useEffect(() => {
+    if (currentMatch && !currentMatch.isComplete) {
+      saveToLocalStorage('cricketCurrentMatch', currentMatch);
+      if (currentSeries) {
+        saveToLocalStorage('cricketCurrentSeries', currentSeries);
+      }
+    }
+  }, [currentMatch, currentSeries]);
+
   const handleMatchUpdate = (match: Match) => {
     setCurrentMatch(match);
     if (currentSeries) {
