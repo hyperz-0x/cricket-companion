@@ -14,6 +14,8 @@ interface MatchHistoryProps {
   onDeleteSeries: (id: string) => void;
   onViewMatch: (match: Match) => void;
   onViewSeries: (series: Series) => void;
+  onContinueMatch?: (match: Match) => void;
+  onContinueSeries?: (series: Series) => void;
   onClose: () => void;
 }
 
@@ -24,8 +26,62 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({
   onDeleteSeries,
   onViewMatch,
   onViewSeries,
+  onContinueMatch,
+  onContinueSeries,
   onClose,
 }) => {
+  const [showStats, setShowStats] = useState(false);
+
+  // Calculate all-time player stats
+  const getAllTimeStats = () => {
+    const stats: Record<string, { name: string; matches: number; runs: number; balls: number; fours: number; sixes: number; wickets: number; overs: number; runsConceded: number }> = {};
+
+    const processMatch = (match: Match) => {
+      if (!match.isComplete) return;
+      match.innings.forEach(innings => {
+        innings.batters.forEach(batter => {
+          if (!stats[batter.name]) {
+            stats[batter.name] = { name: batter.name, matches: 0, runs: 0, balls: 0, fours: 0, sixes: 0, wickets: 0, overs: 0, runsConceded: 0 };
+          }
+          stats[batter.name].runs += batter.runs;
+          stats[batter.name].balls += batter.balls;
+          stats[batter.name].fours += batter.fours;
+          stats[batter.name].sixes += batter.sixes;
+        });
+        innings.bowlers.forEach(bowler => {
+          if (!stats[bowler.name]) {
+            stats[bowler.name] = { name: bowler.name, matches: 0, runs: 0, balls: 0, fours: 0, sixes: 0, wickets: 0, overs: 0, runsConceded: 0 };
+          }
+          stats[bowler.name].wickets += bowler.wickets;
+          stats[bowler.name].overs += bowler.overs;
+          stats[bowler.name].runsConceded += bowler.runs;
+        });
+      });
+    };
+
+    matches.forEach(processMatch);
+    series.forEach(s => s.matches.forEach(processMatch));
+
+    // Count unique matches per player
+    const countMatches = (allMatches: Match[]) => {
+      allMatches.forEach(match => {
+        if (!match.isComplete) return;
+        const playersInMatch = new Set<string>();
+        match.innings.forEach(innings => {
+          innings.batters.forEach(b => playersInMatch.add(b.name));
+          innings.bowlers.forEach(b => playersInMatch.add(b.name));
+        });
+        playersInMatch.forEach(name => {
+          if (stats[name]) stats[name].matches += 1;
+        });
+      });
+    };
+
+    const allMatches = [...matches, ...series.flatMap(s => s.matches)];
+    countMatches(allMatches);
+
+    return Object.values(stats).sort((a, b) => b.runs - a.runs);
+  };
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-2xl mx-auto">
