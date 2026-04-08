@@ -2,7 +2,8 @@ import React from 'react';
 import { Match, Series } from '@/types/cricket';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Trash2, Download, Eye, Calendar, Trophy } from 'lucide-react';
+import { Trash2, Download, Eye, Calendar, Trophy, PlayCircle, BarChart3 } from 'lucide-react';
+import logo from '@/assets/logo.png';
 import { exportMatchToPDF, exportSeriesToPDF } from '@/lib/pdfExport';
 import { formatOvers } from '@/lib/matchUtils';
 

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Match, Series } from '@/types/cricket';
 import { Button } from '@/components/ui/button';
 import { Trophy, Star, Download, ArrowRight, Home } from 'lucide-react';
+import logo from '@/assets/logo.png';
 import { exportMatchToPDF } from '@/lib/pdfExport';
 import { formatOvers } from '@/lib/matchUtils';
 import StatsChart from './StatsChart';

@@ -18,6 +18,7 @@ import PlayerInputModal from './PlayerInputModal';
 import WicketModal from './WicketModal';
 import EditPlayerModal from './EditPlayerModal';
 import { Menu, RotateCcw, Flag, Undo2, Edit3 } from 'lucide-react';
+import logo from '@/assets/logo.png';
 import { toast } from 'sonner';
 
 interface LiveMatchProps {

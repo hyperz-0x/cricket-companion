@@ -2,6 +2,7 @@ import React from 'react';
 import { Series } from '@/types/cricket';
 import { Button } from '@/components/ui/button';
 import { Trophy, Star, Download, Home } from 'lucide-react';
+import logo from '@/assets/logo.png';
 import { exportSeriesToPDF } from '@/lib/pdfExport';
 import { getSeriesStats } from '@/lib/matchUtils';
 import { ScrollArea } from '@/components/ui/scroll-area';
