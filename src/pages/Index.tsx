@@ -346,6 +346,24 @@ const Index: React.FC = () => {
         onContinueMatch={handleContinueMatch}
         onContinueSeries={handleContinueSeries}
         onClose={() => setAppState('home')}
+        onViewPlayer={(name) => {
+          setSelectedPlayer(name);
+          setAppState('playerProfile');
+        }}
+      />
+    );
+  }
+
+  if (appState === 'playerProfile' && selectedPlayer) {
+    return (
+      <PlayerProfile
+        playerName={selectedPlayer}
+        matches={matchHistory}
+        series={seriesHistory}
+        onClose={() => {
+          setSelectedPlayer(null);
+          setAppState('history');
+        }}
       />
     );
   }
