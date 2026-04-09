@@ -14,11 +14,12 @@ import LiveMatch from '@/components/LiveMatch';
 import MatchSummary from '@/components/MatchSummary';
 import SeriesSummary from '@/components/SeriesSummary';
 import MatchHistory from '@/components/MatchHistory';
+import PlayerProfile from '@/components/PlayerProfile';
 import { History, Play } from 'lucide-react';
 import logo from '@/assets/logo.png';
 import { toast } from 'sonner';
 
-type AppState = 'home' | 'setup' | 'match' | 'matchSummary' | 'seriesSummary' | 'history';
+type AppState = 'home' | 'setup' | 'match' | 'matchSummary' | 'seriesSummary' | 'history' | 'playerProfile';
 
 const Index: React.FC = () => {
   const [appState, setAppState] = useState<AppState>('home');
