@@ -5,7 +5,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Trash2, Download, Eye, Calendar, Trophy, PlayCircle, BarChart3 } from 'lucide-react';
 import logo from '@/assets/logo.png';
 import { exportMatchToPDF, exportSeriesToPDF } from '@/lib/pdfExport';
-import { formatOvers } from '@/lib/matchUtils';
+import { formatOvers, calculateStrikeRate, calculateEconomy } from '@/lib/matchUtils';
 
 interface MatchHistoryProps {
   matches: Match[];
@@ -17,6 +17,22 @@ interface MatchHistoryProps {
   onContinueMatch?: (match: Match) => void;
   onContinueSeries?: (series: Series) => void;
   onClose: () => void;
+}
+
+interface AllTimePlayerStats {
+  name: string;
+  matches: number;
+  runs: number;
+  balls: number;
+  fours: number;
+  sixes: number;
+  wickets: number;
+  oversBowled: number;
+  ballsBowled: number;
+  runsConceded: number;
+  bestBatting: number;
+  bestBowling: number;
+  matchesWon: number;
 }
 
 const MatchHistory: React.FC<MatchHistoryProps> = ({
@@ -32,57 +48,84 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({
 }) => {
   const [showStats, setShowStats] = useState(false);
 
-  // Calculate all-time player stats
-  const getAllTimeStats = () => {
-    const stats: Record<string, { name: string; matches: number; runs: number; balls: number; fours: number; sixes: number; wickets: number; overs: number; runsConceded: number }> = {};
+  const getAllTimeStats = (): AllTimePlayerStats[] => {
+    const stats: Record<string, AllTimePlayerStats> = {};
+
+    const ensurePlayer = (name: string) => {
+      if (!stats[name]) {
+        stats[name] = {
+          name, matches: 0, runs: 0, balls: 0, fours: 0, sixes: 0,
+          wickets: 0, oversBowled: 0, ballsBowled: 0, runsConceded: 0,
+          bestBatting: 0, bestBowling: 0, matchesWon: 0,
+        };
+      }
+    };
 
     const processMatch = (match: Match) => {
       if (!match.isComplete) return;
+      const playersInMatch = new Set<string>();
+
       match.innings.forEach(innings => {
         innings.batters.forEach(batter => {
-          if (!stats[batter.name]) {
-            stats[batter.name] = { name: batter.name, matches: 0, runs: 0, balls: 0, fours: 0, sixes: 0, wickets: 0, overs: 0, runsConceded: 0 };
-          }
+          ensurePlayer(batter.name);
           stats[batter.name].runs += batter.runs;
           stats[batter.name].balls += batter.balls;
           stats[batter.name].fours += batter.fours;
           stats[batter.name].sixes += batter.sixes;
+          if (batter.runs > stats[batter.name].bestBatting) {
+            stats[batter.name].bestBatting = batter.runs;
+          }
+          playersInMatch.add(batter.name);
         });
         innings.bowlers.forEach(bowler => {
-          if (!stats[bowler.name]) {
-            stats[bowler.name] = { name: bowler.name, matches: 0, runs: 0, balls: 0, fours: 0, sixes: 0, wickets: 0, overs: 0, runsConceded: 0 };
-          }
+          ensurePlayer(bowler.name);
           stats[bowler.name].wickets += bowler.wickets;
-          stats[bowler.name].overs += bowler.overs;
+          stats[bowler.name].oversBowled += bowler.overs;
+          stats[bowler.name].ballsBowled += bowler.balls;
           stats[bowler.name].runsConceded += bowler.runs;
+          if (bowler.wickets > stats[bowler.name].bestBowling) {
+            stats[bowler.name].bestBowling = bowler.wickets;
+          }
+          playersInMatch.add(bowler.name);
         });
+      });
+
+      playersInMatch.forEach(name => {
+        stats[name].matches += 1;
+        // Check if player was on winning team
+        if (match.winner) {
+          const wasOnWinningTeam = match.innings.some(inn =>
+            (inn.battingTeam === match.winner && inn.batters.some(b => b.name === name)) ||
+            (inn.bowlingTeam === match.winner && inn.bowlers.some(b => b.name === name))
+          );
+          if (wasOnWinningTeam) stats[name].matchesWon += 1;
+        }
       });
     };
 
     matches.forEach(processMatch);
     series.forEach(s => s.matches.forEach(processMatch));
 
-    // Count unique matches per player
-    const countMatches = (allMatches: Match[]) => {
-      allMatches.forEach(match => {
-        if (!match.isComplete) return;
-        const playersInMatch = new Set<string>();
-        match.innings.forEach(innings => {
-          innings.batters.forEach(b => playersInMatch.add(b.name));
-          innings.bowlers.forEach(b => playersInMatch.add(b.name));
-        });
-        playersInMatch.forEach(name => {
-          if (stats[name]) stats[name].matches += 1;
-        });
-      });
-    };
-
-    const allMatches = [...matches, ...series.flatMap(s => s.matches)];
-    countMatches(allMatches);
-
     return Object.values(stats).sort((a, b) => b.runs - a.runs);
   };
+
   const allTimeStats = showStats ? getAllTimeStats() : [];
+
+  const getEconomy = (p: AllTimePlayerStats) => {
+    const totalOvers = p.oversBowled + p.ballsBowled / 6;
+    if (totalOvers === 0) return '-';
+    return (p.runsConceded / totalOvers).toFixed(2);
+  };
+
+  const getSR = (p: AllTimePlayerStats) => {
+    if (p.balls === 0) return '-';
+    return ((p.runs / p.balls) * 100).toFixed(1);
+  };
+
+  const getWinPct = (p: AllTimePlayerStats) => {
+    if (p.matches === 0) return '-';
+    return ((p.matchesWon / p.matches) * 100).toFixed(0) + '%';
+  };
 
   return (
     <div className="min-h-screen bg-background p-4">
@@ -110,36 +153,42 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({
               <BarChart3 className="w-5 h-5" />
               All-Time Player Stats
             </h2>
-            <ScrollArea className="h-80">
+            <ScrollArea className="h-96">
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-xs sm:text-sm">
                   <thead>
                     <tr className="border-b border-border">
-                      <th className="text-left p-2">Player</th>
-                      <th className="text-center p-2">M</th>
-                      <th className="text-center p-2">Runs</th>
-                      <th className="text-center p-2">Balls</th>
-                      <th className="text-center p-2">4s</th>
-                      <th className="text-center p-2">6s</th>
-                      <th className="text-center p-2">Wkts</th>
-                      <th className="text-center p-2">SR</th>
+                      <th className="text-left p-2 sticky left-0 bg-background">Player</th>
+                      <th className="text-center p-1">M</th>
+                      <th className="text-center p-1">Runs</th>
+                      <th className="text-center p-1">4s</th>
+                      <th className="text-center p-1">6s</th>
+                      <th className="text-center p-1">SR</th>
+                      <th className="text-center p-1">Best</th>
+                      <th className="text-center p-1">Wkts</th>
+                      <th className="text-center p-1">ECO</th>
+                      <th className="text-center p-1">BstW</th>
+                      <th className="text-center p-1">Win%</th>
                     </tr>
                   </thead>
                   <tbody>
                     {allTimeStats.map((player, idx) => (
                       <tr key={idx} className="border-b border-border/50 hover:bg-muted/50">
-                        <td className="p-2 font-medium">{player.name}</td>
-                        <td className="text-center p-2">{player.matches}</td>
-                        <td className="text-center p-2 font-semibold text-primary">{player.runs}</td>
-                        <td className="text-center p-2">{player.balls}</td>
-                        <td className="text-center p-2">{player.fours}</td>
-                        <td className="text-center p-2">{player.sixes}</td>
-                        <td className="text-center p-2">{player.wickets}</td>
-                        <td className="text-center p-2">{player.balls > 0 ? ((player.runs / player.balls) * 100).toFixed(1) : '0'}</td>
+                        <td className="p-2 font-medium sticky left-0 bg-background">{player.name}</td>
+                        <td className="text-center p-1">{player.matches}</td>
+                        <td className="text-center p-1 font-semibold text-primary">{player.runs}</td>
+                        <td className="text-center p-1">{player.fours}</td>
+                        <td className="text-center p-1">{player.sixes}</td>
+                        <td className="text-center p-1">{getSR(player)}</td>
+                        <td className="text-center p-1 text-accent font-semibold">{player.bestBatting}</td>
+                        <td className="text-center p-1 font-semibold text-destructive">{player.wickets}</td>
+                        <td className="text-center p-1">{getEconomy(player)}</td>
+                        <td className="text-center p-1 text-destructive font-semibold">{player.bestBowling}</td>
+                        <td className="text-center p-1">{getWinPct(player)}</td>
                       </tr>
                     ))}
                     {allTimeStats.length === 0 && (
-                      <tr><td colSpan={8} className="p-4 text-center text-muted-foreground">No completed matches yet</td></tr>
+                      <tr><td colSpan={11} className="p-4 text-center text-muted-foreground">No completed matches yet</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -196,10 +245,7 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({
             <ScrollArea className="h-64">
               <div className="space-y-3">
                 {series.filter(s => s.isComplete).map((s) => (
-                  <div
-                    key={s.id}
-                    className="cricket-card p-4 flex items-center justify-between"
-                  >
+                  <div key={s.id} className="cricket-card p-4 flex items-center justify-between">
                     <div>
                       <p className="font-semibold">{s.name}</p>
                       <p className="text-sm text-muted-foreground">
@@ -241,20 +287,11 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({
             <ScrollArea className="h-64">
               <div className="space-y-3">
                 {matches.filter(m => m.isComplete).map((match) => (
-                  <div
-                    key={match.id}
-                    className="cricket-card p-4 flex items-center justify-between"
-                  >
+                  <div key={match.id} className="cricket-card p-4 flex items-center justify-between">
                     <div>
-                      <p className="font-semibold">
-                        {match.team1} vs {match.team2}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {new Date(match.date).toLocaleDateString()}
-                      </p>
-                      <p className="text-xs text-primary">
-                        Winner: {match.winner || 'Tied'}
-                      </p>
+                      <p className="font-semibold">{match.team1} vs {match.team2}</p>
+                      <p className="text-sm text-muted-foreground">{new Date(match.date).toLocaleDateString()}</p>
+                      <p className="text-xs text-primary">Winner: {match.winner || 'Tied'}</p>
                     </div>
                     <div className="flex gap-2">
                       <Button variant="ghost" size="icon" onClick={() => onViewMatch(match)}>
