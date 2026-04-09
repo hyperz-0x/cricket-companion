@@ -27,7 +27,7 @@ const Index: React.FC = () => {
   const [currentSeries, setCurrentSeries] = useState<Series | null>(null);
   const [matchHistory, setMatchHistory] = useState<Match[]>([]);
   const [seriesHistory, setSeriesHistory] = useState<Series[]>([]);
-
+  const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
   // Load history from localStorage
   useEffect(() => {
     setMatchHistory(loadFromLocalStorage<Match[]>('cricketMatchHistory', []));
