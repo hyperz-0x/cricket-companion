@@ -14,11 +14,12 @@ import LiveMatch from '@/components/LiveMatch';
 import MatchSummary from '@/components/MatchSummary';
 import SeriesSummary from '@/components/SeriesSummary';
 import MatchHistory from '@/components/MatchHistory';
+import PlayerProfile from '@/components/PlayerProfile';
 import { History, Play } from 'lucide-react';
 import logo from '@/assets/logo.png';
 import { toast } from 'sonner';
 
-type AppState = 'home' | 'setup' | 'match' | 'matchSummary' | 'seriesSummary' | 'history';
+type AppState = 'home' | 'setup' | 'match' | 'matchSummary' | 'seriesSummary' | 'history' | 'playerProfile';
 
 const Index: React.FC = () => {
   const [appState, setAppState] = useState<AppState>('home');
@@ -26,7 +27,7 @@ const Index: React.FC = () => {
   const [currentSeries, setCurrentSeries] = useState<Series | null>(null);
   const [matchHistory, setMatchHistory] = useState<Match[]>([]);
   const [seriesHistory, setSeriesHistory] = useState<Series[]>([]);
-
+  const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
   // Load history from localStorage
   useEffect(() => {
     setMatchHistory(loadFromLocalStorage<Match[]>('cricketMatchHistory', []));
@@ -345,6 +346,24 @@ const Index: React.FC = () => {
         onContinueMatch={handleContinueMatch}
         onContinueSeries={handleContinueSeries}
         onClose={() => setAppState('home')}
+        onViewPlayer={(name) => {
+          setSelectedPlayer(name);
+          setAppState('playerProfile');
+        }}
+      />
+    );
+  }
+
+  if (appState === 'playerProfile' && selectedPlayer) {
+    return (
+      <PlayerProfile
+        playerName={selectedPlayer}
+        matches={matchHistory}
+        series={seriesHistory}
+        onClose={() => {
+          setSelectedPlayer(null);
+          setAppState('history');
+        }}
       />
     );
   }
