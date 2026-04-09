@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Match, Series } from '@/types/cricket';
 import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Trophy, Star, Download, ArrowRight, Home } from 'lucide-react';
 import logo from '@/assets/logo.png';
 import { exportMatchToPDF } from '@/lib/pdfExport';
-import { formatOvers } from '@/lib/matchUtils';
+import { formatOvers, calculateStrikeRate, calculateEconomy, getCurrentRunRate } from '@/lib/matchUtils';
 import StatsChart from './StatsChart';
 import NextMatchModal from './NextMatchModal';
 
@@ -26,6 +27,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
   isSeriesMatch,
 }) => {
   const [showNextMatchModal, setShowNextMatchModal] = useState(false);
+  const [expandedInnings, setExpandedInnings] = useState<number | null>(null);
 
   const handleStartNextMatch = (tossWinner: string, tossDecision: 'bat' | 'bowl') => {
     setShowNextMatchModal(false);
@@ -59,28 +61,112 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
           </h2>
         </div>
 
-        {/* Score Cards */}
+        {/* Detailed Score Cards with player stats */}
         <div className="grid gap-4">
-          {match.innings.map((innings, idx) => (
-            <div key={idx} className="cricket-card p-4">
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="text-sm text-muted-foreground">
-                    {idx === 0 ? '1st' : '2nd'} Innings
-                  </p>
-                  <h3 className="text-lg font-semibold">{innings.battingTeam}</h3>
+          {match.innings.map((innings, idx) => {
+            const isExpanded = expandedInnings === idx;
+            const runRate = getCurrentRunRate(innings.totalRuns, innings.totalOvers, innings.totalBalls);
+            
+            return (
+              <div key={idx} className="cricket-card overflow-hidden">
+                {/* Score header */}
+                <div
+                  className="p-4 flex justify-between items-center cursor-pointer hover:bg-muted/30 transition-colors"
+                  onClick={() => setExpandedInnings(isExpanded ? null : idx)}
+                >
+                  <div>
+                    <p className="text-sm text-muted-foreground">
+                      {idx === 0 ? '1st' : '2nd'} Innings
+                    </p>
+                    <h3 className="text-lg font-semibold">{innings.battingTeam}</h3>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      RR: {runRate} • Extras: {innings.extras.wides + innings.extras.noBalls + innings.extras.byes + innings.extras.legByes}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-bold font-mono text-primary">
+                      {innings.totalRuns}/{innings.totalWickets}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      ({formatOvers(innings.totalOvers, innings.totalBalls)} overs)
+                    </p>
+                    <p className="text-xs text-muted-foreground">{isExpanded ? '▲ Hide' : '▼ Details'}</p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-2xl font-bold font-mono text-primary">
-                    {innings.totalRuns}/{innings.totalWickets}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    ({formatOvers(innings.totalOvers, innings.totalBalls)} overs)
-                  </p>
-                </div>
+
+                {/* Expanded player details */}
+                {isExpanded && (
+                  <div className="border-t border-border px-4 pb-4">
+                    {/* Batting */}
+                    <h4 className="text-xs font-semibold text-primary mt-3 mb-2">Batting</h4>
+                    <ScrollArea className="max-h-48">
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="text-muted-foreground">
+                            <th className="text-left pb-1">Batter</th>
+                            <th className="text-center pb-1">R</th>
+                            <th className="text-center pb-1">B</th>
+                            <th className="text-center pb-1">4s</th>
+                            <th className="text-center pb-1">6s</th>
+                            <th className="text-center pb-1">SR</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {innings.batters.map((batter) => (
+                            <tr key={batter.id} className={`border-t border-border/30 ${batter.isOut ? 'text-muted-foreground' : ''}`}>
+                              <td className="py-1 text-left">
+                                {batter.name}
+                                {batter.isOut && <span className="text-destructive ml-1 text-[10px]">({batter.dismissalType || 'out'})</span>}
+                              </td>
+                              <td className="text-center font-mono font-semibold">{batter.runs}</td>
+                              <td className="text-center font-mono">{batter.balls}</td>
+                              <td className="text-center font-mono">{batter.fours}</td>
+                              <td className="text-center font-mono">{batter.sixes}</td>
+                              <td className="text-center font-mono">{calculateStrikeRate(batter.runs, batter.balls)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </ScrollArea>
+
+                    {/* Extras */}
+                    <div className="mt-2 text-xs text-muted-foreground">
+                      Extras: {innings.extras.wides}wd, {innings.extras.noBalls}nb, {innings.extras.byes}b, {innings.extras.legByes}lb
+                    </div>
+
+                    {/* Bowling */}
+                    <h4 className="text-xs font-semibold text-destructive mt-3 mb-2">Bowling</h4>
+                    <ScrollArea className="max-h-36">
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="text-muted-foreground">
+                            <th className="text-left pb-1">Bowler</th>
+                            <th className="text-center pb-1">O</th>
+                            <th className="text-center pb-1">M</th>
+                            <th className="text-center pb-1">R</th>
+                            <th className="text-center pb-1">W</th>
+                            <th className="text-center pb-1">ECO</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {innings.bowlers.map((bowler) => (
+                            <tr key={bowler.id} className="border-t border-border/30">
+                              <td className="py-1 text-left">{bowler.name}</td>
+                              <td className="text-center font-mono">{formatOvers(bowler.overs, bowler.balls)}</td>
+                              <td className="text-center font-mono">{bowler.maidens}</td>
+                              <td className="text-center font-mono">{bowler.runs}</td>
+                              <td className="text-center font-mono font-bold text-destructive">{bowler.wickets}</td>
+                              <td className="text-center font-mono">{calculateEconomy(bowler.runs, bowler.overs, bowler.balls)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </ScrollArea>
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Man of the Match */}
@@ -100,12 +186,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
 
         {/* Actions */}
         <div className="flex flex-col gap-3">
-          <Button
-            variant="outline"
-            size="lg"
-            onClick={() => exportMatchToPDF(match)}
-            className="w-full"
-          >
+          <Button variant="outline" size="lg" onClick={() => exportMatchToPDF(match)} className="w-full">
             <Download className="w-4 h-4 mr-2" />
             Download Scorecard (PDF)
           </Button>
@@ -118,12 +199,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({
           )}
 
           {onGoHome && (
-            <Button
-              variant="secondary"
-              size="lg"
-              onClick={onGoHome}
-              className="w-full"
-            >
+            <Button variant="secondary" size="lg" onClick={onGoHome} className="w-full">
               <Home className="w-4 h-4 mr-2" />
               Home
             </Button>
