@@ -176,7 +176,14 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({
                   <tbody>
                     {allTimeStats.map((player, idx) => (
                       <tr key={idx} className="border-b border-border/50 hover:bg-muted/50">
-                        <td className="p-2 font-medium sticky left-0 bg-background">{player.name}</td>
+                        <td className="p-2 font-medium sticky left-0 bg-background">
+                          <button
+                            className="text-left hover:text-primary hover:underline transition-colors cursor-pointer"
+                            onClick={() => onViewPlayer?.(player.name)}
+                          >
+                            {player.name}
+                          </button>
+                        </td>
                         <td className="text-center p-1">{player.matches}</td>
                         <td className="text-center p-1 font-semibold text-primary">{player.runs}</td>
                         <td className="text-center p-1">{player.fours}</td>
