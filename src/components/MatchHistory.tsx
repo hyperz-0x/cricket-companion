@@ -17,6 +17,7 @@ interface MatchHistoryProps {
   onContinueMatch?: (match: Match) => void;
   onContinueSeries?: (series: Series) => void;
   onClose: () => void;
+  onViewPlayer?: (playerName: string) => void;
 }
 
 interface AllTimePlayerStats {
