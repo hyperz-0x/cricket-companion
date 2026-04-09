@@ -46,6 +46,7 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({
   onContinueMatch,
   onContinueSeries,
   onClose,
+  onViewPlayer,
 }) => {
   const [showStats, setShowStats] = useState(false);
 
