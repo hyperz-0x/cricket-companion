@@ -12,6 +12,7 @@ import {
 import MatchSetupWizard from '@/components/MatchSetupWizard';
 import LiveMatch from '@/components/LiveMatch';
 import MatchSummary from '@/components/MatchSummary';
+import PlayerComparison from '@/components/PlayerComparison';
 import SeriesSummary from '@/components/SeriesSummary';
 import MatchHistory from '@/components/MatchHistory';
 import PlayerProfile from '@/components/PlayerProfile';
@@ -19,7 +20,7 @@ import { History, Play } from 'lucide-react';
 import logo from '@/assets/logo.png';
 import { toast } from 'sonner';
 
-type AppState = 'home' | 'setup' | 'match' | 'matchSummary' | 'seriesSummary' | 'history' | 'playerProfile';
+type AppState = 'home' | 'setup' | 'match' | 'matchSummary' | 'seriesSummary' | 'history' | 'playerProfile' | 'playerComparison';
 
 const Index: React.FC = () => {
   const [appState, setAppState] = useState<AppState>('home');
@@ -350,6 +351,17 @@ const Index: React.FC = () => {
           setSelectedPlayer(name);
           setAppState('playerProfile');
         }}
+        onCompare={() => setAppState('playerComparison')}
+      />
+    );
+  }
+
+  if (appState === 'playerComparison') {
+    return (
+      <PlayerComparison
+        matches={matchHistory}
+        series={seriesHistory}
+        onClose={() => setAppState('history')}
       />
     );
   }
