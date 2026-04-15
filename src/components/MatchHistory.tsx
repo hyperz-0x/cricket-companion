@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Match, Series } from '@/types/cricket';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Trash2, Download, Eye, Calendar, Trophy, PlayCircle, BarChart3 } from 'lucide-react';
+import { Trash2, Download, Eye, Calendar, Trophy, PlayCircle, BarChart3, GitCompareArrows } from 'lucide-react';
 import logo from '@/assets/logo.png';
 import { exportMatchToPDF, exportSeriesToPDF } from '@/lib/pdfExport';
 import { formatOvers, calculateStrikeRate, calculateEconomy } from '@/lib/matchUtils';
@@ -18,6 +18,7 @@ interface MatchHistoryProps {
   onContinueSeries?: (series: Series) => void;
   onClose: () => void;
   onViewPlayer?: (playerName: string) => void;
+  onCompare?: () => void;
 }
 
 interface AllTimePlayerStats {
@@ -47,6 +48,7 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({
   onContinueSeries,
   onClose,
   onViewPlayer,
+  onCompare,
 }) => {
   const [showStats, setShowStats] = useState(false);
 
@@ -141,6 +143,10 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({
             <Button variant={showStats ? "default" : "outline"} size="sm" onClick={() => setShowStats(!showStats)}>
               <BarChart3 className="w-4 h-4 mr-1" />
               Stats
+            </Button>
+            <Button variant="outline" size="sm" onClick={onCompare}>
+              <GitCompareArrows className="w-4 h-4 mr-1" />
+              Compare
             </Button>
             <Button variant="outline" size="sm" onClick={onClose}>
               Back
