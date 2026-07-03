@@ -6,6 +6,7 @@ import { Trash2, Download, Eye, Calendar, Trophy, PlayCircle, BarChart3, GitComp
 import logo from '@/assets/logo.png';
 import { exportMatchToPDF, exportSeriesToPDF } from '@/lib/pdfExport';
 import { formatOvers, calculateStrikeRate, calculateEconomy } from '@/lib/matchUtils';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface MatchHistoryProps {
   matches: Match[];
@@ -131,6 +132,66 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({
     return ((p.matchesWon / p.matches) * 100).toFixed(0) + '%';
   };
 
+  const economyNum = (p: AllTimePlayerStats) => {
+    const totalOvers = p.oversBowled + p.ballsBowled / 6;
+    return totalOvers === 0 ? Infinity : p.runsConceded / totalOvers;
+  };
+  const srNum = (p: AllTimePlayerStats) =>
+    p.balls === 0 ? 0 : (p.runs / p.balls) * 100;
+
+  type LeaderCfg = {
+    key: string;
+    label: string;
+    accent: string;
+    getValue: (p: AllTimePlayerStats) => string | number;
+    sortBy: (p: AllTimePlayerStats) => number;
+    ascending?: boolean;
+    eligible?: (p: AllTimePlayerStats) => boolean;
+  };
+
+  const leaderboards: LeaderCfg[] = [
+    { key: 'runs', label: 'Runs', accent: 'text-primary', getValue: p => p.runs, sortBy: p => p.runs },
+    { key: 'wickets', label: 'Wickets', accent: 'text-destructive', getValue: p => p.wickets, sortBy: p => p.wickets },
+    { key: 'matches', label: 'Matches', accent: 'text-accent', getValue: p => p.matches, sortBy: p => p.matches },
+    { key: 'sr', label: 'Strike Rate', accent: 'text-primary', getValue: p => getSR(p), sortBy: srNum, eligible: p => p.balls >= 6 },
+    { key: 'eco', label: 'Economy', accent: 'text-destructive', getValue: p => getEconomy(p), sortBy: economyNum, ascending: true, eligible: p => p.oversBowled + p.ballsBowled / 6 >= 1 },
+    { key: 'fours', label: '4s', accent: 'text-primary', getValue: p => p.fours, sortBy: p => p.fours },
+    { key: 'sixes', label: '6s', accent: 'text-primary', getValue: p => p.sixes, sortBy: p => p.sixes },
+  ];
+
+  const renderLeaderboard = (cfg: LeaderCfg) => {
+    const rows = allTimeStats
+      .filter(p => (cfg.eligible ? cfg.eligible(p) : true))
+      .sort((a, b) => (cfg.ascending ? cfg.sortBy(a) - cfg.sortBy(b) : cfg.sortBy(b) - cfg.sortBy(a)));
+
+    if (rows.length === 0) {
+      return <div className="p-6 text-center text-muted-foreground text-sm">No data yet</div>;
+    }
+
+    return (
+      <ScrollArea className="h-80">
+        <div className="divide-y divide-border/50">
+          {rows.map((p, idx) => (
+            <div key={p.name} className="flex items-center justify-between px-3 py-2.5 hover:bg-muted/40">
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="w-6 text-xs text-muted-foreground tabular-nums">#{idx + 1}</span>
+                <button
+                  className="text-sm font-medium truncate text-left hover:text-primary hover:underline"
+                  onClick={() => onViewPlayer?.(p.name)}
+                >
+                  {p.name}
+                </button>
+              </div>
+              <span className={`text-base font-bold tabular-nums ${cfg.accent}`}>
+                {cfg.getValue(p)}
+              </span>
+            </div>
+          ))}
+        </div>
+      </ScrollArea>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-2xl mx-auto">
@@ -159,56 +220,28 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({
           <div className="mb-6">
             <h2 className="text-lg font-semibold text-primary mb-3 flex items-center gap-2">
               <BarChart3 className="w-5 h-5" />
-              All-Time Player Stats
+              All-Time Leaderboards
             </h2>
-            <ScrollArea className="h-96">
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs sm:text-sm">
-                  <thead>
-                    <tr className="border-b border-border">
-                      <th className="text-left p-2 sticky left-0 bg-background">Player</th>
-                      <th className="text-center p-1">M</th>
-                      <th className="text-center p-1">Runs</th>
-                      <th className="text-center p-1">4s</th>
-                      <th className="text-center p-1">6s</th>
-                      <th className="text-center p-1">SR</th>
-                      <th className="text-center p-1">Best</th>
-                      <th className="text-center p-1">Wkts</th>
-                      <th className="text-center p-1">ECO</th>
-                      <th className="text-center p-1">BstW</th>
-                      <th className="text-center p-1">Win%</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {allTimeStats.map((player, idx) => (
-                      <tr key={idx} className="border-b border-border/50 hover:bg-muted/50">
-                        <td className="p-2 font-medium sticky left-0 bg-background">
-                          <button
-                            className="text-left hover:text-primary hover:underline transition-colors cursor-pointer"
-                            onClick={() => onViewPlayer?.(player.name)}
-                          >
-                            {player.name}
-                          </button>
-                        </td>
-                        <td className="text-center p-1">{player.matches}</td>
-                        <td className="text-center p-1 font-semibold text-primary">{player.runs}</td>
-                        <td className="text-center p-1">{player.fours}</td>
-                        <td className="text-center p-1">{player.sixes}</td>
-                        <td className="text-center p-1">{getSR(player)}</td>
-                        <td className="text-center p-1 text-accent font-semibold">{player.bestBatting}</td>
-                        <td className="text-center p-1 font-semibold text-destructive">{player.wickets}</td>
-                        <td className="text-center p-1">{getEconomy(player)}</td>
-                        <td className="text-center p-1 text-destructive font-semibold">{player.bestBowling}</td>
-                        <td className="text-center p-1">{getWinPct(player)}</td>
-                      </tr>
-                    ))}
-                    {allTimeStats.length === 0 && (
-                      <tr><td colSpan={11} className="p-4 text-center text-muted-foreground">No completed matches yet</td></tr>
-                    )}
-                  </tbody>
-                </table>
+            {allTimeStats.length === 0 ? (
+              <div className="cricket-card p-6 text-center text-muted-foreground">
+                No completed matches yet
               </div>
-            </ScrollArea>
+            ) : (
+              <Tabs defaultValue="runs" className="w-full">
+                <TabsList className="flex flex-wrap h-auto justify-start gap-1 bg-muted/40">
+                  {leaderboards.map(cfg => (
+                    <TabsTrigger key={cfg.key} value={cfg.key} className="text-xs sm:text-sm">
+                      {cfg.label}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+                {leaderboards.map(cfg => (
+                  <TabsContent key={cfg.key} value={cfg.key} className="mt-3 cricket-card p-0 overflow-hidden">
+                    {renderLeaderboard(cfg)}
+                  </TabsContent>
+                ))}
+              </Tabs>
+            )}
           </div>
         )}
 
