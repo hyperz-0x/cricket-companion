@@ -6,9 +6,15 @@ import {
   createInnings,
   calculateManOfMatch,
   calculateManOfSeries,
-  saveToLocalStorage,
-  loadFromLocalStorage,
 } from '@/lib/matchUtils';
+import {
+  fetchAllMatches,
+  fetchAllSeries,
+  upsertMatch,
+  upsertSeries,
+  deleteMatchDb,
+  deleteSeriesDb,
+} from '@/lib/cricketStore';
 import MatchSetupWizard from '@/components/MatchSetupWizard';
 import LiveMatch from '@/components/LiveMatch';
 import MatchSummary from '@/components/MatchSummary';
@@ -29,20 +35,14 @@ const Index: React.FC = () => {
   const [matchHistory, setMatchHistory] = useState<Match[]>([]);
   const [seriesHistory, setSeriesHistory] = useState<Series[]>([]);
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
-  // Load history from localStorage
+  // Load history from Lovable Cloud database
   useEffect(() => {
-    setMatchHistory(loadFromLocalStorage<Match[]>('cricketMatchHistory', []));
-    setSeriesHistory(loadFromLocalStorage<Series[]>('cricketSeriesHistory', []));
+    (async () => {
+      const [m, s] = await Promise.all([fetchAllMatches(), fetchAllSeries()]);
+      setMatchHistory(m);
+      setSeriesHistory(s);
+    })();
   }, []);
-
-  // Save history to localStorage
-  useEffect(() => {
-    saveToLocalStorage('cricketMatchHistory', matchHistory);
-  }, [matchHistory]);
-
-  useEffect(() => {
-    saveToLocalStorage('cricketSeriesHistory', seriesHistory);
-  }, [seriesHistory]);
 
   const handleSetupComplete = (setup: MatchSetup) => {
     const battingTeam =
@@ -85,9 +85,11 @@ const Index: React.FC = () => {
       };
       setCurrentSeries(newSeries);
       setSeriesHistory((prev) => [newSeries, ...prev]);
+      upsertSeries(newSeries);
     } else {
       setCurrentSeries(null);
       setMatchHistory((prev) => [newMatch, ...prev]);
+      upsertMatch(newMatch);
     }
 
     setCurrentMatch(newMatch);
@@ -106,9 +108,11 @@ const Index: React.FC = () => {
       setCurrentSeries(updatedSeries);
       // Sync to history
       setSeriesHistory((prev) => prev.map(s => s.id === updatedSeries.id ? updatedSeries : s));
+      upsertSeries(updatedSeries);
     } else {
       // Sync to history
       setMatchHistory((prev) => prev.map(m => m.id === match.id ? match : m));
+      upsertMatch(match);
     }
   };
 
@@ -148,6 +152,7 @@ const Index: React.FC = () => {
         updatedSeries.manOfSeries = calculateManOfSeries(updatedSeries);
         setSeriesHistory((prev) => prev.map(s => s.id === updatedSeries.id ? updatedSeries : s));
         setCurrentSeries(updatedSeries);
+        upsertSeries(updatedSeries);
         setAppState('seriesSummary');
         
         if (updatedSeries.team1Wins === updatedSeries.team2Wins) {
@@ -158,11 +163,13 @@ const Index: React.FC = () => {
       } else {
         setCurrentSeries(updatedSeries);
         setSeriesHistory((prev) => prev.map(s => s.id === updatedSeries.id ? updatedSeries : s));
+        upsertSeries(updatedSeries);
         setAppState('matchSummary');
         toast.success('Match complete!');
       }
     } else {
       setMatchHistory((prev) => prev.map(m => m.id === match.id ? match : m));
+      upsertMatch(match);
       setAppState('matchSummary');
       toast.success('Match complete!');
     }
@@ -200,6 +207,8 @@ const Index: React.FC = () => {
     const updatedSeries = { ...currentSeries };
     updatedSeries.matches.push(newMatch);
     setCurrentSeries(updatedSeries);
+    setSeriesHistory((prev) => prev.map(s => s.id === updatedSeries.id ? updatedSeries : s));
+    upsertSeries(updatedSeries);
     setCurrentMatch(newMatch);
     setAppState('match');
     toast.success(`Match ${updatedSeries.matches.length} started!`);
@@ -217,11 +226,13 @@ const Index: React.FC = () => {
 
   const handleDeleteMatch = (id: string) => {
     setMatchHistory((prev) => prev.filter((m) => m.id !== id));
+    deleteMatchDb(id);
     toast.success('Match deleted');
   };
 
   const handleDeleteSeries = (id: string) => {
     setSeriesHistory((prev) => prev.filter((s) => s.id !== id));
+    deleteSeriesDb(id);
     toast.success('Series deleted');
   };
 
