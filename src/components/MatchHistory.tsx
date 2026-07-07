@@ -7,6 +7,7 @@ import logo from '@/assets/logo.png';
 import { exportMatchToPDF, exportSeriesToPDF } from '@/lib/pdfExport';
 import { formatOvers, calculateStrikeRate, calculateEconomy } from '@/lib/matchUtils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 
 interface MatchHistoryProps {
   matches: Match[];
@@ -52,6 +53,7 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({
   onCompare,
 }) => {
   const [showStats, setShowStats] = useState(false);
+  const [selectedPlayer, setSelectedPlayer] = useState<AllTimePlayerStats | null>(null);
 
   const getAllTimeStats = (): AllTimePlayerStats[] => {
     const stats: Record<string, AllTimePlayerStats> = {};
@@ -177,14 +179,17 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({
                 <span className="w-6 text-xs text-muted-foreground tabular-nums">#{idx + 1}</span>
                 <button
                   className="text-sm font-medium truncate text-left hover:text-primary hover:underline"
-                  onClick={() => onViewPlayer?.(p.name)}
+                  onClick={() => setSelectedPlayer(p)}
                 >
                   {p.name}
                 </button>
               </div>
-              <span className={`text-base font-bold tabular-nums ${cfg.accent}`}>
+              <button
+                onClick={() => setSelectedPlayer(p)}
+                className={`text-base font-bold tabular-nums ${cfg.accent} hover:opacity-80`}
+              >
                 {cfg.getValue(p)}
-              </span>
+              </button>
             </div>
           ))}
         </div>
@@ -359,6 +364,56 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({
           )}
         </div>
       </div>
+
+      {/* Player Stat Breakdown Modal */}
+      <Dialog open={!!selectedPlayer} onOpenChange={(o) => !o && setSelectedPlayer(null)}>
+        <DialogContent className="bg-card border-border max-w-md">
+          {selectedPlayer && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-xl">{selectedPlayer.name}</DialogTitle>
+                <DialogDescription>Full career stat breakdown</DialogDescription>
+              </DialogHeader>
+              <div className="grid grid-cols-2 gap-3 py-2">
+                {[
+                  ['Matches', selectedPlayer.matches],
+                  ['Runs', selectedPlayer.runs],
+                  ['Balls', selectedPlayer.balls],
+                  ['4s', selectedPlayer.fours],
+                  ['6s', selectedPlayer.sixes],
+                  ['Wickets', selectedPlayer.wickets],
+                  ['Strike Rate', getSR(selectedPlayer)],
+                  ['Economy', getEconomy(selectedPlayer)],
+                  ['Overs Bowled', formatOvers(selectedPlayer.oversBowled, selectedPlayer.ballsBowled)],
+                  ['Runs Conceded', selectedPlayer.runsConceded],
+                  ['Best Score', selectedPlayer.bestBatting],
+                  ['Best Bowling', `${selectedPlayer.bestBowling}W`],
+                  ['Win %', getWinPct(selectedPlayer)],
+                ].map(([k, v]) => (
+                  <div key={k as string} className="rounded-lg border border-border/50 bg-muted/20 p-2.5">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{k}</p>
+                    <p className="text-lg font-bold font-mono text-primary">{v}</p>
+                  </div>
+                ))}
+              </div>
+              <DialogFooter className="gap-2 sm:gap-2">
+                <Button variant="outline" onClick={() => setSelectedPlayer(null)}>Close</Button>
+                {onViewPlayer && (
+                  <Button
+                    onClick={() => {
+                      const name = selectedPlayer.name;
+                      setSelectedPlayer(null);
+                      onViewPlayer(name);
+                    }}
+                  >
+                    View Full Profile
+                  </Button>
+                )}
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
