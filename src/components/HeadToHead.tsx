@@ -163,7 +163,7 @@ const HeadToHead: React.FC<Props> = ({ matches, series, onClose }) => {
                 <StatBox label="Boundaries" value={boundaries} />
                 <StatBox label="4s" value={stats.fours} />
                 <StatBox label="6s" value={stats.sixes} />
-                <StatBox label="Dots" value={stats.balls - (stats.runs - stats.fours * 4 - stats.sixes * 6) - stats.fours - stats.sixes >= 0 ? stats.balls - (stats.runs > 0 ? 1 : 0) * 0 : 0} />
+                <StatBox label="Innings" value={stats.innings} />
               </div>
             </>
           ) : (
