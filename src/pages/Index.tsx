@@ -19,6 +19,7 @@ import MatchSetupWizard from '@/components/MatchSetupWizard';
 import LiveMatch from '@/components/LiveMatch';
 import MatchSummary from '@/components/MatchSummary';
 import PlayerComparison from '@/components/PlayerComparison';
+import HeadToHead from '@/components/HeadToHead';
 import SeriesSummary from '@/components/SeriesSummary';
 import MatchHistory from '@/components/MatchHistory';
 import PlayerProfile from '@/components/PlayerProfile';
@@ -26,7 +27,7 @@ import { History, Play } from 'lucide-react';
 import logo from '@/assets/logo.png';
 import { toast } from 'sonner';
 
-type AppState = 'home' | 'setup' | 'match' | 'matchSummary' | 'seriesSummary' | 'history' | 'playerProfile' | 'playerComparison';
+type AppState = 'home' | 'setup' | 'match' | 'matchSummary' | 'seriesSummary' | 'history' | 'playerProfile' | 'playerComparison' | 'headToHead';
 
 const Index: React.FC = () => {
   const [appState, setAppState] = useState<AppState>('home');
@@ -363,6 +364,7 @@ const Index: React.FC = () => {
           setAppState('playerProfile');
         }}
         onCompare={() => setAppState('playerComparison')}
+        onHeadToHead={() => setAppState('headToHead')}
       />
     );
   }
@@ -370,6 +372,16 @@ const Index: React.FC = () => {
   if (appState === 'playerComparison') {
     return (
       <PlayerComparison
+        matches={matchHistory}
+        series={seriesHistory}
+        onClose={() => setAppState('history')}
+      />
+    );
+  }
+
+  if (appState === 'headToHead') {
+    return (
+      <HeadToHead
         matches={matchHistory}
         series={seriesHistory}
         onClose={() => setAppState('history')}
