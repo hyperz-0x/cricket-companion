@@ -42,6 +42,18 @@ export interface Innings {
   currentBowlerIndex: number;
   overHistory: string[][];
   isComplete: boolean;
+  ballLog?: BallEvent[];
+}
+
+export interface BallEvent {
+  batter: string;
+  bowler: string;
+  batterRuns: number;
+  batterBall: boolean;
+  isWicket: boolean;
+  bowlerWicket: boolean;
+  isFour: boolean;
+  isSix: boolean;
 }
 
 export interface Match {

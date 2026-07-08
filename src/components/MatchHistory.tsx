@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Match, Series } from '@/types/cricket';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Trash2, Download, Eye, Calendar, Trophy, PlayCircle, BarChart3, GitCompareArrows } from 'lucide-react';
+import { Trash2, Download, Eye, Calendar, Trophy, PlayCircle, BarChart3, GitCompareArrows, Swords } from 'lucide-react';
 import logo from '@/assets/logo.png';
 import { exportMatchToPDF, exportSeriesToPDF } from '@/lib/pdfExport';
 import { formatOvers, calculateStrikeRate, calculateEconomy } from '@/lib/matchUtils';
@@ -21,6 +21,7 @@ interface MatchHistoryProps {
   onClose: () => void;
   onViewPlayer?: (playerName: string) => void;
   onCompare?: () => void;
+  onHeadToHead?: () => void;
 }
 
 interface AllTimePlayerStats {
@@ -51,6 +52,7 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({
   onClose,
   onViewPlayer,
   onCompare,
+  onHeadToHead,
 }) => {
   const [showStats, setShowStats] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<AllTimePlayerStats | null>(null);
@@ -213,6 +215,10 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({
             <Button variant="outline" size="sm" onClick={onCompare}>
               <GitCompareArrows className="w-4 h-4 mr-1" />
               Compare
+            </Button>
+            <Button variant="outline" size="sm" onClick={onHeadToHead}>
+              <Swords className="w-4 h-4 mr-1" />
+              H2H
             </Button>
             <Button variant="outline" size="sm" onClick={onClose}>
               Back

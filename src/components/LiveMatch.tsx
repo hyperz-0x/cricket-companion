@@ -140,6 +140,10 @@ const LiveMatch: React.FC<LiveMatchProps> = ({
 
     let ballLabel = runs.toString();
     let isLegalDelivery = true;
+    let batterRuns = 0;
+    let batterBall = false;
+    let isFour = false;
+    let isSix = false;
 
     if (isExtra) {
       switch (extraType) {
@@ -160,18 +164,22 @@ const LiveMatch: React.FC<LiveMatchProps> = ({
           bowler.noBalls += 1;
           ballLabel = `${runs}nb`;
           isLegalDelivery = false;
+          batterRuns = runs - 1;
+          batterBall = runs - 1 > 0;
           break;
         case 'bye':
           innings.extras.byes += runs;
           innings.totalRuns += runs;
           striker.balls += 1;
           ballLabel = `${runs}b`;
+          batterBall = true;
           break;
         case 'legbye':
           innings.extras.legByes += runs;
           innings.totalRuns += runs;
           striker.balls += 1;
           ballLabel = `${runs}lb`;
+          batterBall = true;
           break;
       }
     } else {
@@ -183,10 +191,26 @@ const LiveMatch: React.FC<LiveMatchProps> = ({
       if (runs === 4) striker.fours += 1;
       if (runs === 6) striker.sixes += 1;
       if (runs === 0) ballLabel = '0';
+      batterRuns = runs;
+      batterBall = true;
+      isFour = runs === 4;
+      isSix = runs === 6;
     }
 
     // Add to over history
     innings.overHistory[currentOverIdx].push(ballLabel);
+
+    if (!innings.ballLog) innings.ballLog = [];
+    innings.ballLog.push({
+      batter: striker.name,
+      bowler: bowler.name,
+      batterRuns,
+      batterBall,
+      isWicket: false,
+      bowlerWicket: false,
+      isFour,
+      isSix,
+    });
 
     if (isLegalDelivery) {
       innings.totalBalls += 1;
@@ -281,6 +305,18 @@ const LiveMatch: React.FC<LiveMatchProps> = ({
 
     // Add to over history
     innings.overHistory[currentOverIdx].push('W');
+
+    if (!innings.ballLog) innings.ballLog = [];
+    innings.ballLog.push({
+      batter: striker.name,
+      bowler: bowler.name,
+      batterRuns: 0,
+      batterBall: true,
+      isWicket: true,
+      bowlerWicket: dismissalType !== 'runout',
+      isFour: false,
+      isSix: false,
+    });
 
     // Check if all out
     const maxWickets = match.playersPerTeam - 1;
