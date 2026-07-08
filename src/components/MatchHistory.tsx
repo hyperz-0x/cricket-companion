@@ -216,6 +216,10 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({
               <GitCompareArrows className="w-4 h-4 mr-1" />
               Compare
             </Button>
+            <Button variant="outline" size="sm" onClick={onHeadToHead}>
+              <Swords className="w-4 h-4 mr-1" />
+              H2H
+            </Button>
             <Button variant="outline" size="sm" onClick={onClose}>
               Back
             </Button>
