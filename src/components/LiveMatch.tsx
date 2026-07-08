@@ -306,6 +306,18 @@ const LiveMatch: React.FC<LiveMatchProps> = ({
     // Add to over history
     innings.overHistory[currentOverIdx].push('W');
 
+    if (!innings.ballLog) innings.ballLog = [];
+    innings.ballLog.push({
+      batter: striker.name,
+      bowler: bowler.name,
+      batterRuns: 0,
+      batterBall: true,
+      isWicket: true,
+      bowlerWicket: dismissalType !== 'runout',
+      isFour: false,
+      isSix: false,
+    });
+
     // Check if all out
     const maxWickets = match.playersPerTeam - 1;
     if (innings.totalWickets >= maxWickets) {
