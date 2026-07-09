@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Match, Series } from '@/types/cricket';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Trash2, Download, Eye, Calendar, Trophy, PlayCircle, BarChart3, GitCompareArrows, Swords } from 'lucide-react';
+import { Download, Eye, Calendar, Trophy, PlayCircle, BarChart3, GitCompareArrows, Swords } from 'lucide-react';
 import logo from '@/assets/logo.png';
 import { exportMatchToPDF, exportSeriesToPDF } from '@/lib/pdfExport';
 import { formatOvers, calculateStrikeRate, calculateEconomy } from '@/lib/matchUtils';
@@ -394,9 +394,6 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({
                       <Button variant="ghost" size="icon" onClick={() => exportSeriesToPDF(s)}>
                         <Download className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => onDeleteSeries(s.id)}>
-                        <Trash2 className="w-4 h-4 text-destructive" />
-                      </Button>
                     </div>
                   </div>
                 ))}
@@ -431,9 +428,6 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({
                       </Button>
                       <Button variant="ghost" size="icon" onClick={() => exportMatchToPDF(match)}>
                         <Download className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => onDeleteMatch(match.id)}>
-                        <Trash2 className="w-4 h-4 text-destructive" />
                       </Button>
                     </div>
                   </div>
