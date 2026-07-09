@@ -8,6 +8,7 @@ import { exportMatchToPDF, exportSeriesToPDF } from '@/lib/pdfExport';
 import { formatOvers, calculateStrikeRate, calculateEconomy } from '@/lib/matchUtils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Crown } from 'lucide-react';
 
 interface MatchHistoryProps {
   matches: Match[];
@@ -56,6 +57,41 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({
 }) => {
   const [showStats, setShowStats] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<AllTimePlayerStats | null>(null);
+
+  interface CaptainStats {
+    name: string;
+    matches: number;
+    wins: number;
+    losses: number;
+    ties: number;
+  }
+
+  const getCaptainStats = (): CaptainStats[] => {
+    const stats: Record<string, CaptainStats> = {};
+    const ensure = (n: string) => {
+      if (!stats[n]) stats[n] = { name: n, matches: 0, wins: 0, losses: 0, ties: 0 };
+    };
+    const process = (m: Match) => {
+      if (!m.isComplete) return;
+      const entries: Array<[string | undefined, string]> = [
+        [m.team1Captain, m.team1],
+        [m.team2Captain, m.team2],
+      ];
+      entries.forEach(([captain, team]) => {
+        if (!captain) return;
+        ensure(captain);
+        stats[captain].matches += 1;
+        if (!m.winner) stats[captain].ties += 1;
+        else if (m.winner === team) stats[captain].wins += 1;
+        else stats[captain].losses += 1;
+      });
+    };
+    matches.forEach(process);
+    series.forEach(s => s.matches.forEach(process));
+    return Object.values(stats).sort((a, b) => b.wins - a.wins || b.matches - a.matches);
+  };
+
+  const captainStats = showStats ? getCaptainStats() : [];
 
   const getAllTimeStats = (): AllTimePlayerStats[] => {
     const stats: Record<string, AllTimePlayerStats> = {};
@@ -245,12 +281,49 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({
                       {cfg.label}
                     </TabsTrigger>
                   ))}
+                  <TabsTrigger value="captains" className="text-xs sm:text-sm">
+                    Captains
+                  </TabsTrigger>
                 </TabsList>
                 {leaderboards.map(cfg => (
                   <TabsContent key={cfg.key} value={cfg.key} className="mt-3 cricket-card p-0 overflow-hidden">
                     {renderLeaderboard(cfg)}
                   </TabsContent>
                 ))}
+                <TabsContent value="captains" className="mt-3 cricket-card p-0 overflow-hidden">
+                  {captainStats.length === 0 ? (
+                    <div className="p-6 text-center text-muted-foreground text-sm">
+                      No captain data yet. Add captain names when starting a match.
+                    </div>
+                  ) : (
+                    <ScrollArea className="h-80">
+                      <div className="divide-y divide-border/50">
+                        <div className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-3 px-3 py-2 text-[10px] uppercase tracking-wider text-muted-foreground bg-muted/30">
+                          <span>Captain</span>
+                          <span className="text-right w-10">M</span>
+                          <span className="text-right w-10">W</span>
+                          <span className="text-right w-10">L</span>
+                          <span className="text-right w-14">Win %</span>
+                        </div>
+                        {captainStats.map((c) => {
+                          const pct = c.matches === 0 ? '-' : ((c.wins / c.matches) * 100).toFixed(0) + '%';
+                          return (
+                            <div key={c.name} className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-3 items-center px-3 py-2.5 hover:bg-muted/40">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <Crown className="w-4 h-4 text-cricket-gold shrink-0" />
+                                <span className="text-sm font-medium truncate">{c.name}</span>
+                              </div>
+                              <span className="text-right w-10 font-mono text-sm">{c.matches}</span>
+                              <span className="text-right w-10 font-mono text-sm text-primary font-bold">{c.wins}</span>
+                              <span className="text-right w-10 font-mono text-sm text-destructive">{c.losses}</span>
+                              <span className="text-right w-14 font-mono text-sm font-bold">{pct}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </ScrollArea>
+                  )}
+                </TabsContent>
               </Tabs>
             )}
           </div>
