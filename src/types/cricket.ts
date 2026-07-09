@@ -72,6 +72,8 @@ export interface Match {
     winner: string;
     decision: 'bat' | 'bowl';
   };
+  team1Captain?: string;
+  team2Captain?: string;
 }
 
 export interface Series {
@@ -114,4 +116,6 @@ export interface MatchSetup {
   oversPerInnings: number;
   tossWinner?: string;
   tossDecision?: 'bat' | 'bowl';
+  team1Captain?: string;
+  team2Captain?: string;
 }

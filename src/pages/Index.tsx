@@ -70,6 +70,8 @@ const Index: React.FC = () => {
         winner: setup.tossWinner!,
         decision: setup.tossDecision!,
       },
+      team1Captain: setup.team1Captain?.trim() || undefined,
+      team2Captain: setup.team2Captain?.trim() || undefined,
     };
 
     if (setup.matchType === 'series' && setup.seriesLength) {
@@ -203,6 +205,8 @@ const Index: React.FC = () => {
         winner: tossWinner,
         decision: tossDecision,
       },
+      team1Captain: currentMatch.team1Captain,
+      team2Captain: currentMatch.team2Captain,
     };
 
     const updatedSeries = { ...currentSeries };

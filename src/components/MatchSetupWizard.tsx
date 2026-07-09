@@ -163,6 +163,13 @@ const MatchSetupWizard: React.FC<MatchSetupWizardProps> = ({ onComplete }) => {
             placeholder="Enter team name"
             className="h-12 text-lg"
           />
+          <Input
+            id="team1Captain"
+            value={setup.team1Captain ?? ''}
+            onChange={(e) => setSetup({ ...setup, team1Captain: e.target.value })}
+            placeholder="Captain name (optional)"
+            className="h-11"
+          />
         </div>
 
         <div className="flex items-center justify-center">
@@ -177,6 +184,13 @@ const MatchSetupWizard: React.FC<MatchSetupWizardProps> = ({ onComplete }) => {
             onChange={(e) => setSetup({ ...setup, team2: e.target.value })}
             placeholder="Enter team name"
             className="h-12 text-lg"
+          />
+          <Input
+            id="team2Captain"
+            value={setup.team2Captain ?? ''}
+            onChange={(e) => setSetup({ ...setup, team2Captain: e.target.value })}
+            placeholder="Captain name (optional)"
+            className="h-11"
           />
         </div>
       </div>
