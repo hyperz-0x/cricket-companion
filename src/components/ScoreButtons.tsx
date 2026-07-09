@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 interface ScoreButtonsProps {
   onScore: (runs: number, isExtra?: boolean, extraType?: string) => void;
@@ -8,6 +9,14 @@ interface ScoreButtonsProps {
 }
 
 const ScoreButtons: React.FC<ScoreButtonsProps> = ({ onScore, onWicket, disabled }) => {
+  const [noBallOpen, setNoBallOpen] = useState(false);
+
+  const handleNoBallRuns = (batRuns: number) => {
+    // Total runs added to team: 1 (penalty) + batter runs
+    onScore(1 + batRuns, true, 'noball');
+    setNoBallOpen(false);
+  };
+
   return (
     <div className="space-y-3">
       {/* Run buttons */}
@@ -86,7 +95,7 @@ const ScoreButtons: React.FC<ScoreButtonsProps> = ({ onScore, onWicket, disabled
         <Button
           variant="scoreExtra"
           size="score"
-          onClick={() => onScore(1, true, 'noball')}
+          onClick={() => setNoBallOpen(true)}
           disabled={disabled}
           className="score-button text-sm"
         >
@@ -122,6 +131,30 @@ const ScoreButtons: React.FC<ScoreButtonsProps> = ({ onScore, onWicket, disabled
       >
         🎯 WICKET
       </Button>
+
+      <Dialog open={noBallOpen} onOpenChange={setNoBallOpen}>
+        <DialogContent className="bg-card border-border max-w-sm">
+          <DialogHeader>
+            <DialogTitle>No Ball</DialogTitle>
+            <DialogDescription>
+              1 run penalty + how many runs did the batter score off the no ball?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-4 gap-2 pt-2">
+            {[0, 1, 2, 3, 4, 5, 6].map((n) => (
+              <Button
+                key={n}
+                variant={n === 4 || n === 6 ? 'scoreBoundary' : 'scoreRun'}
+                size="score"
+                onClick={() => handleNoBallRuns(n)}
+                className="score-button"
+              >
+                NB+{n}
+              </Button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
