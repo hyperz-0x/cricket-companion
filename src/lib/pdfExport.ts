@@ -183,3 +183,86 @@ export const exportSeriesToPDF = (series: Series) => {
     };
   }
 };
+
+export const exportAllHistoryToPDF = (matches: Match[], series: Series[]) => {
+  const completedMatches = matches.filter(m => m.isComplete);
+  const completedSeries = series.filter(s => s.isComplete);
+
+  if (completedMatches.length === 0 && completedSeries.length === 0) {
+    alert('No completed matches or series to export.');
+    return;
+  }
+
+  const strip = (html: string) =>
+    html
+      .replace(/^[\s\S]*?<body[^>]*>/i, '')
+      .replace(/<\/body>[\s\S]*$/i, '');
+
+  const sections: string[] = [];
+
+  completedSeries.forEach((s, i) => {
+    sections.push(
+      `<section class="page-block">${strip(createSeriesPDFContent(s))}</section>` +
+        (i < completedSeries.length - 1 || completedMatches.length > 0
+          ? '<div class="page-break"></div>'
+          : '')
+    );
+  });
+
+  completedMatches.forEach((m, i) => {
+    sections.push(
+      `<section class="page-block">${strip(createPDFContent(m))}</section>` +
+        (i < completedMatches.length - 1 ? '<div class="page-break"></div>' : '')
+    );
+  });
+
+  const content = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>HYP-CricScore - Full History Export</title>
+  <style>
+    body { font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; color: #333; }
+    h1 { color: #16a34a; text-align: center; }
+    h2 { color: #1f2937; border-bottom: 2px solid #16a34a; padding-bottom: 8px; }
+    h3 { color: #374151; }
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    th, td { padding: 10px; text-align: left; border-bottom: 1px solid #e5e7eb; }
+    th { background: #16a34a; color: white; }
+    tr:nth-child(even) { background: #f9fafb; }
+    .score { font-size: 24px; font-weight: bold; color: #16a34a; }
+    .extras { color: #6b7280; font-size: 14px; }
+    .mom { background: linear-gradient(135deg, #fef3c7, #fde68a); padding: 16px; border-radius: 8px; text-align: center; margin: 16px 0; }
+    .winner { background: linear-gradient(135deg, #dcfce7, #bbf7d0); padding: 16px; border-radius: 8px; text-align: center; margin: 16px 0; }
+    .series-score { font-size: 32px; font-weight: bold; text-align: center; color: #16a34a; margin: 20px 0; }
+    .mos { background: linear-gradient(135deg, #fef3c7, #fde68a); padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0; }
+    .match-card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin: 16px 0; }
+    .page-break { page-break-after: always; }
+    .page-block { margin-bottom: 24px; }
+    .cover { text-align: center; padding: 60px 20px; }
+    .cover h1 { font-size: 36px; }
+    .cover p { color: #6b7280; }
+  </style>
+</head>
+<body>
+  <div class="cover">
+    <h1>🏏 HYP-CricScore</h1>
+    <h2 style="border:none;">Full Match & Series History</h2>
+    <p>Exported ${new Date().toLocaleString()}</p>
+    <p>${completedSeries.length} series • ${completedMatches.length} matches</p>
+  </div>
+  <div class="page-break"></div>
+  ${sections.join('\n')}
+</body>
+</html>`;
+
+  const blob = new Blob([content], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const printWindow = window.open(url, '_blank');
+  if (printWindow) {
+    printWindow.onload = () => {
+      printWindow.print();
+    };
+  }
+};
