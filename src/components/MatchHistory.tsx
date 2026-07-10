@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Download, Eye, Calendar, Trophy, PlayCircle, BarChart3, GitCompareArrows, Swords } from 'lucide-react';
 import logo from '@/assets/logo.png';
-import { exportMatchToPDF, exportSeriesToPDF } from '@/lib/pdfExport';
+import { exportMatchToPDF, exportSeriesToPDF, exportAllHistoryToPDF } from '@/lib/pdfExport';
 import { formatOvers, calculateStrikeRate, calculateEconomy } from '@/lib/matchUtils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -238,12 +238,17 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-2xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <img src={logo} alt="HYP-CricScore" className="w-8 h-8 object-contain" />
-            <h1 className="text-2xl font-bold">Match History</h1>
+        <div className="flex flex-col gap-3 mb-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <img src={logo} alt="HYP-CricScore" className="w-8 h-8 object-contain" />
+              <h1 className="text-xl sm:text-2xl font-bold">Match History</h1>
+            </div>
+            <Button variant="outline" size="sm" onClick={onClose} className="sm:hidden">
+              Back
+            </Button>
           </div>
-          <div className="flex gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-2">
             <Button variant={showStats ? "default" : "outline"} size="sm" onClick={() => setShowStats(!showStats)}>
               <BarChart3 className="w-4 h-4 mr-1" />
               Stats
@@ -256,7 +261,16 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({
               <Swords className="w-4 h-4 mr-1" />
               H2H
             </Button>
-            <Button variant="outline" size="sm" onClick={onClose}>
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => exportAllHistoryToPDF(matches, series)}
+              className="col-span-2"
+            >
+              <Download className="w-4 h-4 mr-1" />
+              Export All (PDF)
+            </Button>
+            <Button variant="outline" size="sm" onClick={onClose} className="hidden sm:inline-flex">
               Back
             </Button>
           </div>
