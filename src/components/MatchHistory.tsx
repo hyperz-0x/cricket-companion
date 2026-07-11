@@ -405,8 +405,14 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({
                       <Button variant="ghost" size="icon" onClick={() => onViewSeries(s)}>
                         <Eye className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => exportSeriesToPDF(s)}>
-                        <Download className="w-4 h-4" />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => exportSeriesToPDF(s)}
+                        title={`Export ${s.totalMatches}-match series as PDF`}
+                      >
+                        <Download className="w-4 h-4 mr-1" />
+                        PDF
                       </Button>
                     </div>
                   </div>
@@ -440,8 +446,14 @@ const MatchHistory: React.FC<MatchHistoryProps> = ({
                       <Button variant="ghost" size="icon" onClick={() => onViewMatch(match)}>
                         <Eye className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => exportMatchToPDF(match)}>
-                        <Download className="w-4 h-4" />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => exportMatchToPDF(match)}
+                        title="Export match scorecard as PDF"
+                      >
+                        <Download className="w-4 h-4 mr-1" />
+                        PDF
                       </Button>
                     </div>
                   </div>
