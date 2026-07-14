@@ -12,3 +12,5 @@ Allow: /
 
 User-agent: *
 Allow: /
+
+Sitemap: https://hyp-cricscore.lovable.app/sitemap.xml
